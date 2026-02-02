@@ -375,7 +375,7 @@ class TelegramMediaDownloader {
             this.isAuthenticated = true;
             this.updateAuthStatus(true);
             this.loginSection.style.display = 'none';
-            this.controlPanel.style.display = 'block';
+            // controlPanel已被移除，无需显示
             this.showToast('认证成功', 'success');
         } else if (data.qrCode) {
             this.displayQRCode(data.qrCode);

@@ -61,9 +61,79 @@ public class DatabaseInitializer implements CommandLineRunner {
                 log.info("tags 字段已存在");
             }
             
+            // 检查并添加thumbnail字段
+            if (!columnExists("download_item", "thumbnail")) {
+                String addThumbnailColumnSql = "ALTER TABLE download_item ADD COLUMN thumbnail TEXT";
+                jdbcTemplate.execute(addThumbnailColumnSql);
+                log.info("已添加 thumbnail 字段到 download_item 表");
+            } else {
+                log.info("thumbnail 字段已存在");
+            }
+            
+            // 检查并添加其他新字段
+            checkAndAddNewColumns();
+            
         } catch (Exception e) {
             log.error("初始化 download_item 表失败", e);
             throw e;
+        }
+    }
+    
+    /**
+     * 检查并添加其他新增字段
+     */
+    private void checkAndAddNewColumns() {
+        try {
+            // 添加complete_time字段
+            if (!columnExists("download_item", "complete_time")) {
+                String addCompleteTimeColumnSql = "ALTER TABLE download_item ADD COLUMN complete_time TEXT";
+                jdbcTemplate.execute(addCompleteTimeColumnSql);
+                log.info("已添加 complete_time 字段到 download_item 表");
+            } else {
+                log.info("complete_time 字段已存在");
+            }
+            
+            // 添加update_time字段
+            if (!columnExists("download_item", "update_time")) {
+                String addUpdateTimeColumnSql = "ALTER TABLE download_item ADD COLUMN update_time TEXT";
+                jdbcTemplate.execute(addUpdateTimeColumnSql);
+                log.info("已添加 update_time 字段到 download_item 表");
+            } else {
+                log.info("update_time 字段已存在");
+            }
+            
+            // 添加download_byte_per_sec字段
+            if (!columnExists("download_item", "download_byte_per_sec")) {
+                String addDownloadBytePerSecColumnSql = "ALTER TABLE download_item ADD COLUMN download_byte_per_sec INTEGER";
+                jdbcTemplate.execute(addDownloadBytePerSecColumnSql);
+                log.info("已添加 download_byte_per_sec 字段到 download_item 表");
+            } else {
+                log.info("download_byte_per_sec 字段已存在");
+            }
+            
+            // 添加download_update_time字段
+            if (!columnExists("download_item", "download_update_time")) {
+                String addDownloadUpdateTimeColumnSql = "ALTER TABLE download_item ADD COLUMN download_update_time TEXT";
+                jdbcTemplate.execute(addDownloadUpdateTimeColumnSql);
+                log.info("已添加 download_update_time 字段到 download_item 表");
+            } else {
+                log.info("download_update_time 字段已存在");
+            }
+            
+            // 添加download_count字段
+            if (!columnExists("download_item", "download_count")) {
+                String addDownloadCountColumnSql = "ALTER TABLE download_item ADD COLUMN download_count INTEGER DEFAULT 0";
+                jdbcTemplate.execute(addDownloadCountColumnSql);
+                log.info("已添加 download_count 字段到 download_item 表");
+            } else {
+                log.info("download_count 字段已存在");
+            }
+            
+
+            
+        } catch (Exception e) {
+            log.error("添加新字段时发生错误", e);
+            // 不抛出异常，继续执行其他操作
         }
     }
     
@@ -112,8 +182,15 @@ public class DatabaseInitializer implements CommandLineRunner {
                 file_size INTEGER NULL,
                 downloaded_size INTEGER NULL,
                 caption TEXT NULL,
+                tags TEXT NULL,
+                thumbnail TEXT NULL,
                 state TEXT NULL,
-                create_time TEXT NULL
+                create_time TEXT NULL,
+                complete_time TEXT NULL,
+                update_time TEXT NULL,
+                download_byte_per_sec INTEGER NULL,
+                download_update_time TEXT NULL,
+                download_count INTEGER DEFAULT 0
             )
             """;
         jdbcTemplate.execute(createTableSql);

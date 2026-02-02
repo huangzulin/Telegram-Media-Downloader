@@ -482,6 +482,27 @@ class VideoGallery {
         const formattedDate = this.formatDate(video.createTime);
         const displayName = video.description || video.filename;
         
+        // 处理封面图片
+        let thumbnailHtml = '';
+        if (video.thumbnail) {
+            thumbnailHtml = `
+                <div class="video-thumbnail">
+                    <img src="/downloads/thumbnails/${video.thumbnail}" 
+                         alt="${this.escapeHtml(displayName)}" 
+                         class="thumbnail-image"
+                         onerror="this.parentElement.innerHTML='<div class=\\'thumbnail-placeholder\\'><i class=\\'fas fa-video\\'></i></div>'">
+                </div>
+            `;
+        } else {
+            thumbnailHtml = `
+                <div class="video-thumbnail">
+                    <div class="thumbnail-placeholder">
+                        <i class="fas fa-video"></i>
+                    </div>
+                </div>
+            `;
+        }
+        
         // 处理标签显示
         let tagsHtml = '';
         if (video.tags) {
@@ -500,11 +521,11 @@ class VideoGallery {
                     </div>
                 `;
             }
-
         }
         
         return `
             <div class="video-list-item" data-video-id="${video.uniqueId}">
+                ${thumbnailHtml}
                 <div class="video-details">
                     <div class="video-title">${this.escapeHtml(displayName)}</div>
                     <div class="video-tag-meta">
@@ -518,7 +539,6 @@ class VideoGallery {
                                 <i class="fas fa-calendar"></i>
                                 ${formattedDate}
                             </span>
-
                         </div>
                     </div>
                 </div>
@@ -541,7 +561,13 @@ class VideoGallery {
     }
 
     getThumbnailUrl(filename) {
-        // 这里可以返回视频缩略图，暂时使用占位图
+        // 首先尝试获取对应的缩略图
+        const video = this.videos.find(v => v.filename === filename);
+        if (video && video.thumbnail) {
+            return `/downloads/thumbnails/${encodeURIComponent(video.thumbnail)}`;
+        }
+        
+        // 如果没有缩略图，返回默认占位图
         return '/images/video-thumbnail.png';
     }
 

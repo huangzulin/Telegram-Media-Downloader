@@ -7,10 +7,10 @@ import fun.zulin.tmd.data.item.DownloadItem;
 import fun.zulin.tmd.data.item.DownloadItemServiceImpl;
 import fun.zulin.tmd.data.item.DownloadState;
 import fun.zulin.tmd.utils.SpringContext;
+import fun.zulin.tmd.utils.VideoProcessor;
 import it.tdlight.jni.TdApi;
 import lombok.extern.slf4j.Slf4j;
 
-// 移除了文件操作相关的import
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -114,16 +114,29 @@ public class DownloadManage {
                             
                             // 执行文件重命名操作
                             boolean renameSuccess = renameDownloadedFile(saveItem, result.get().local.path);
-                            
+
+                            // 如果是视频文件，直接生成本地截图作为缩略图
+                            String thumbnailFilename = null;
+                            if (renameSuccess && isVideoFile(saveItem.getFilename())) {
+                                log.info("开始生成视频 {} 的缩略图", saveItem.getFilename());
+                                thumbnailFilename = generateVideoThumbnail(saveItem);
+                                if (thumbnailFilename != null) {
+                                    saveItem.setThumbnail(thumbnailFilename);
+                                    log.info("成功设置视频封面: {} -> {}", saveItem.getFilename(), thumbnailFilename);
+                                } else {
+                                    log.warn("设置视频封面失败: {}", saveItem.getFilename());
+                                }
+                            }
+
                             // 更新下载完成状态
                             saveItem.setState(DownloadState.Complete.name());
                             saveItem.setDownloadedSize(result.get().size);
                             saveItem.setProgress(100.0f);
                             service.updateById(saveItem);
-                            
+
                             // 推送状态更新
                             pushStateUpdate(saveItem);
-                            
+
                             log.info("下载完成: {} (重命名: {})", item.getFilename(), renameSuccess ? "成功" : "失败");
                         }
                     } finally {
@@ -153,7 +166,36 @@ public class DownloadManage {
             }
         });
     }
-    
+
+    /**
+     * 生成视频缩略图
+     * 直接使用本地视频截取第一帧作为缩略图
+     *
+     * @param item 下载项
+     * @return 缩略图文件名，失败返回null
+     */
+    private static String generateVideoThumbnail(DownloadItem item) {
+        try {
+            log.info("开始生成视频缩略图: {} (ID: {})", item.getFilename(), item.getId());
+            
+            // 直接生成视频截图
+            String videoPath = "downloads/videos/" + item.getFilename();
+            log.info("尝试生成视频截图: {}", videoPath);
+            String generatedThumbnail = VideoProcessor.extractFirstFrameAsThumbnail(videoPath);
+            if (generatedThumbnail != null) {
+                log.info("成功生成视频截图作为封面: {}", generatedThumbnail);
+                return generatedThumbnail;
+            }
+
+            log.warn("无法生成视频封面: {}", item.getFilename());
+            return null;
+
+        } catch (Exception e) {
+            log.error("生成视频缩略图时发生异常: {}", item.getUniqueId(), e);
+            return null;
+        }
+    }
+
     /**
      * 处理下载错误
      */
@@ -164,24 +206,25 @@ public class DownloadManage {
             saveItem.setState(DownloadState.Failed.name());
             saveItem.setCaption(errorMessage);
             service.updateById(saveItem);
-            
+
             // 推送状态更新
             pushStateUpdate(saveItem);
         } catch (Exception e) {
             log.error("更新下载错误状态失败: {}", item.getUniqueId(), e);
         }
     }
-    
+
     /**
      * 处理下载超时
      */
     private static void handleDownloadTimeout(DownloadItem item) {
         handleDownloadError(item, "下载超时");
     }
-    
+
     /**
      * 重命名下载完成的文件
-     * @param item 下载项
+     *
+     * @param item               下载项
      * @param downloadedFilePath 下载完成的文件路径
      * @return 重命名是否成功
      */
@@ -191,46 +234,45 @@ public class DownloadManage {
                 log.warn("下载文件路径为空: {}", item.getUniqueId());
                 return false;
             }
-            
+
             Path sourcePath = Paths.get(downloadedFilePath);
             if (!Files.exists(sourcePath)) {
                 log.warn("源文件不存在: {}", downloadedFilePath);
                 return false;
             }
-            
+
             // 确保downloads/videos目录存在
             Path videosDir = Paths.get("downloads/videos");
             if (!Files.exists(videosDir)) {
                 Files.createDirectories(videosDir);
                 log.info("创建目录: {}", videosDir.toAbsolutePath());
             }
-            
+
             // 构建目标文件路径
             Path targetPath = videosDir.resolve(item.getFilename());
-            
+
             // 如果目标文件已存在，先删除
             if (Files.exists(targetPath)) {
                 Files.delete(targetPath);
                 log.info("删除已存在的目标文件: {}", targetPath.getFileName());
             }
-            
+
             // 移动文件到目标位置
             Files.move(sourcePath, targetPath);
-            log.info("文件重命名成功: {} -> {}", 
-                     sourcePath.getFileName(), targetPath.getFileName());
-            
+            log.info("文件重命名成功: {} -> {}",
+                    sourcePath.getFileName(), targetPath.getFileName());
+
             return true;
-            
+
         } catch (IOException e) {
-            log.error("文件重命名失败: {} -> {}", 
-                     downloadedFilePath, item.getFilename(), e);
+            log.error("文件重命名失败: {} -> {}",
+                    downloadedFilePath, item.getFilename(), e);
             return false;
         } catch (Exception e) {
             log.error("文件重命名过程中发生异常: {}", item.getUniqueId(), e);
             return false;
         }
     }
-
 
     /**
      * 启动下载（用于应用重启时恢复下载）
@@ -283,7 +325,7 @@ public class DownloadManage {
             log.error("恢复下载任务时发生异常", e);
         }
     }
-    
+
     /**
      * 检查下载项是否仍在内存队列中
      * 用于判断是否应该恢复该任务
@@ -294,7 +336,7 @@ public class DownloadManage {
                     .anyMatch(item -> item.getUniqueId().equals(uniqueId));
         }
     }
-    
+
     /**
      * 清理已删除的下载项（防止应用重启时重建）
      * 这个方法可以在适当的时候调用，比如定期清理
@@ -317,7 +359,7 @@ public class DownloadManage {
             log.error("清理已删除下载项时发生异常", e);
         }
     }
-    
+
     /**
      * 推送状态更新到前端
      * @param item 更新的下载项
@@ -356,6 +398,26 @@ public class DownloadManage {
     }
 
     /**
+     * 判断文件是否为视频文件
+     * @param filename 文件名
+     * @return 是否为视频文件
+     */
+    private static boolean isVideoFile(String filename) {
+        if (filename == null || filename.isEmpty()) {
+            return false;
+        }
+        String lowerFilename = filename.toLowerCase();
+        return lowerFilename.endsWith(".mp4") || 
+               lowerFilename.endsWith(".avi") || 
+               lowerFilename.endsWith(".mov") || 
+               lowerFilename.endsWith(".wmv") || 
+               lowerFilename.endsWith(".flv") || 
+               lowerFilename.endsWith(".mkv") || 
+               lowerFilename.endsWith(".webm") || 
+               lowerFilename.endsWith(".m4v");
+    }
+    
+    /**
      * 更新下载进度
      *
      * @param uniqueId       唯一id
@@ -366,8 +428,11 @@ public class DownloadManage {
         for (DownloadItem item : downloadingItems) {
             if (uniqueId.equals(item.getUniqueId())) {
 
-                if (item.getDownloadCount() < 5) {
-                    item.setDownloadCount(item.getDownloadCount() + 1);
+                // 添加null检查，确保downloadCount不为null
+                int currentDownloadCount = item.getDownloadCount() != null ? item.getDownloadCount() : 0;
+                
+                if (currentDownloadCount < 5) {
+                    item.setDownloadCount(currentDownloadCount + 1);
                 } else {
                     item.setDownloadCount(0);
                     var downloadDiff = downloadedSize - item.getDownloadedSize();

@@ -135,10 +135,13 @@ tmd:
 logging:
   level:
     root: INFO
-    fun.zulin.tmd: DEBUG
+    fun.zulin.tmd: INFO
     org.springframework.web: INFO
-    org.mybatis: DEBUG
+    org.mybatis: WARN
+    org.apache.ibatis: WARN
     com.zaxxer.hikari: WARN
+    org.mybatis.spring.SqlSessionUtils: WARN
+    org.mybatis.spring.transaction: WARN
   pattern:
     console: "%clr(%d{yyyy-MM-dd HH:mm:ss.SSS}){faint} %clr(${LOG_LEVEL_PATTERN:-%5p}) %clr(${PID:- }){magenta} %clr(---){faint} %clr([%15.15t]){faint} %clr(%-40.40logger{39}){cyan} %clr(:){faint} %m%n${LOG_EXCEPTION_CONVERSION_WORD:-%wEx}"
     file: "%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n"

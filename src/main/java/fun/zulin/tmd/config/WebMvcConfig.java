@@ -29,6 +29,11 @@ public class WebMvcConfig implements WebMvcConfigurer {
                 .addResourceLocations("file:./downloads/videos/")
                 .setCachePeriod(3600);
                 
+        // 映射/downloads/thumbnails子目录（视频封面）
+        registry.addResourceHandler("/downloads/thumbnails/**")
+                .addResourceLocations("file:./downloads/thumbnails/")
+                .setCachePeriod(3600);
+                
         // 映射/downloads/temp子目录
         registry.addResourceHandler("/downloads/temp/**")
                 .addResourceLocations("file:./downloads/temp/")

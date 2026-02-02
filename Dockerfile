@@ -1,40 +1,11 @@
 # Multi-stage build for optimal image size and security
 
-# Frontend build stage
-FROM node:lts-alpine AS frontend-build
-LABEL stage=frontend
-LABEL org.opencontainers.image.description="Frontend build stage"
-
-# Install build dependencies
-RUN apk add --no-cache \
-    git \
-    python3 \
-    make \
-    g++ \
-    && rm -rf /var/cache/apk/*
-
-WORKDIR /app
-
-# Clone frontend repository
-RUN git clone https://github.com/huangzulin/tmd-vue . 2>/dev/null || git pull
-
-# Install frontend dependencies
-COPY package*.json ./
-RUN npm ci --prefer-offline --no-audit --no-fund --omit=dev
-
-# Build frontend
-COPY . .
-RUN npm run build
-
 # Backend build stage
 FROM maven:3.9.7-eclipse-temurin-21 AS backend-build
 LABEL stage=backend
 LABEL org.opencontainers.image.description="Backend build stage"
 
 WORKDIR /build
-
-# Copy frontend build results
-COPY --from=frontend-build /app/dist src/main/resources/static
 
 # Copy source code and dependencies
 COPY src src
@@ -51,11 +22,12 @@ LABEL org.opencontainers.image.description="High-performance Telegram media down
 LABEL org.opencontainers.image.version="1.0"
 LABEL org.opencontainers.image.licenses="MIT"
 
-# Install required system packages
+# Install required system packages including FFmpeg for video processing
 RUN apk add --no-cache \
     curl \
     openssl \
     tzdata \
+    ffmpeg \
     && rm -rf /var/cache/apk/*
 
 # Create non-root user for security

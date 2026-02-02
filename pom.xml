@@ -104,6 +104,13 @@
             <version>3.5.3</version>
         </dependency>
 
+        <!-- FFmpeg Java Wrapper for video processing -->
+        <dependency>
+            <groupId>net.bramp.ffmpeg</groupId>
+            <artifactId>ffmpeg</artifactId>
+            <version>0.7.0</version>
+        </dependency>
+
         <dependency>
             <groupId>it.tdlight</groupId>
             <artifactId>tdlight-natives</artifactId>

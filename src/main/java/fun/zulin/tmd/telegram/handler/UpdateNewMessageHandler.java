@@ -8,12 +8,14 @@ import fun.zulin.tmd.telegram.Tmd;
 import fun.zulin.tmd.utils.FilenameUtils;
 import fun.zulin.tmd.utils.SpringContext;
 import it.tdlight.jni.TdApi;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.logging.log4j.util.Strings;
 
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.Objects;
 
+@Slf4j
 public class UpdateNewMessageHandler {
 
     public static void accept(TdApi.UpdateNewMessage update) {
@@ -74,6 +76,8 @@ public class UpdateNewMessageHandler {
         if (description.isEmpty()) {
             description = "Unnamed Video";
         }
+        
+        // 不再处理Telegram缩略图，直接使用本地生成
         
         // 先保存获取数据库ID
         item = DownloadItem.builder()

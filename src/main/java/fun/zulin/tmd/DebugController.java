@@ -165,4 +165,93 @@ public class DebugController {
             return ApiResponse.error(500, "迁移失败: " + e.getMessage());
         }
     }
+    
+    /**
+     * 检查缩略图相关数据
+     */
+    @GetMapping("/thumbnails-info")
+    public ApiResponse<Map<String, Object>> getThumbnailsInfo() {
+        try {
+            log.info("检查缩略图相关信息");
+            
+            Map<String, Object> result = new HashMap<>();
+            
+            // 检查数据库中的缩略图信息
+            List<DownloadItem> items = downloadItemService.getDownloadedItem();
+            List<DownloadItem> itemsWithThumbnails = items.stream()
+                .filter(item -> item.getThumbnail() != null && !item.getThumbnail().isEmpty())
+                .collect(Collectors.toList());
+            
+
+            
+            result.put("totalItems", items.size());
+            result.put("itemsWithThumbnails", itemsWithThumbnails.size());
+            
+            // 显示缩略图详情
+            List<Map<String, Object>> thumbnailDetails = itemsWithThumbnails.stream()
+                .map(item -> {
+                    Map<String, Object> detail = new HashMap<>();
+                    detail.put("id", item.getId());
+                    detail.put("filename", item.getFilename());
+                    detail.put("thumbnail", item.getThumbnail());
+                    detail.put("state", item.getState());
+                    return detail;
+                })
+                .collect(Collectors.toList());
+            
+            result.put("thumbnailDetails", thumbnailDetails);
+            
+            // 检查缩略图文件系统
+            Path thumbnailsDir = Paths.get("downloads/thumbnails");
+            if (Files.exists(thumbnailsDir)) {
+                List<String> thumbnailFiles = Files.walk(thumbnailsDir)
+                    .filter(Files::isRegularFile)
+                    .map(path -> path.getFileName().toString())
+                    .collect(Collectors.toList());
+                result.put("thumbnailFilesInFs", thumbnailFiles);
+                result.put("thumbnailFilesCount", thumbnailFiles.size());
+            } else {
+                result.put("thumbnailFilesInFs", List.of());
+                result.put("thumbnailFilesCount", 0);
+                result.put("thumbnailsDirExists", false);
+            }
+            
+            log.info("缩略图信息检查完成: 总数={}, 有缩略图={}, 文件系统中={}", 
+                    items.size(), itemsWithThumbnails.size(), 
+                    result.get("thumbnailFilesCount"));
+            
+            return ApiResponse.success(result);
+        } catch (Exception e) {
+            log.error("检查缩略图信息失败", e);
+            return ApiResponse.error(500, "检查失败: " + e.getMessage());
+        }
+    }
+    
+    /**
+     * 测试缩略图下载功能
+     */
+    @PostMapping("/test-thumbnail-download/{itemId}")
+    public ApiResponse<Map<String, Object>> testThumbnailDownload(@PathVariable Long itemId) {
+        try {
+            log.info("测试缩略图下载功能，itemId: {}", itemId);
+            
+            DownloadItem item = downloadItemService.getById(itemId);
+            if (item == null) {
+                return ApiResponse.error(404, "找不到指定的下载项");
+            }
+            
+            Map<String, Object> result = new HashMap<>();
+            result.put("itemId", itemId);
+            result.put("filename", item.getFilename());
+            result.put("currentThumbnail", item.getThumbnail());
+            
+            // 这里可以调用实际的下载逻辑进行测试
+            result.put("testStatus", "功能待实现");
+            
+            return ApiResponse.success(result);
+        } catch (Exception e) {
+            log.error("测试缩略图下载失败", e);
+            return ApiResponse.error(500, "测试失败: " + e.getMessage());
+        }
+    }
 }

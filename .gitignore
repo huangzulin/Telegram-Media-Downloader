@@ -36,3 +36,4 @@ build/
 /downloads/
 /data/
 /logs/tmd.log
+/.env

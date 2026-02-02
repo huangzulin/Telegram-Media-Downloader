@@ -63,31 +63,64 @@ public class DownloadItem {
      */
     private String tags;
 
+    /**
+     * 视频封面图片文件名
+     * 存储本地生成的视频截图
+     */
+    private String thumbnail;
+
     @Ignore
     @TableField(exist = false)
     private Float progress;
 
     private String state;
 
+    /**
+     * 创建时间
+     */
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
+    private LocalDateTime createTime;
 
     /**
-     * 每隔n次统计速度
+     * 下载完成时间
      */
-    @Ignore
-    @TableField(exist = false)
-    private int downloadCount;
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
+    private LocalDateTime completeTime;
+
+    /**
+     * 最后更新时间
+     */
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
+    private LocalDateTime updateTime;
+
+    /**
+     * 下载速度（字节/秒）
+     */
+    private Long downloadBytePerSec;
+
+    /**
+     * 下载更新时间
+     */
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
+    private LocalDateTime downloadUpdateTime;
+
+    /**
+     * 下载计数器
+     */
+    private Integer downloadCount = 0;
+    
+    // 添加getter方法确保不会返回null
+    public Integer getDownloadCount() {
+        return downloadCount != null ? downloadCount : 0;
+    }
 
     public long getDownloadBytePerSec() {
         var timeDiff = Duration.between(this.getDownloadUpdateTime(), LocalDateTime.now(ZoneId.of("Asia/Shanghai"))).toSeconds();
         if (timeDiff > 2) {
             return 0;
         }
-        return downloadBytePerSec;
+        return downloadBytePerSec != null ? downloadBytePerSec : 0;
     }
-
-    @Ignore
-    @TableField(exist = false)
-    private long downloadBytePerSec;
 
     public LocalDateTime getDownloadUpdateTime() {
         if (downloadUpdateTime == null) {
@@ -96,16 +129,9 @@ public class DownloadItem {
         return downloadUpdateTime;
     }
 
-    @Ignore
-    @TableField(exist = false)
-    private LocalDateTime downloadUpdateTime;
-
-    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
-    private LocalDateTime createTime;
-
-
     public Float getProgress() {
-        return (float) (downloadedSize) / (float) (fileSize) * 100;
+        if (fileSize <= 0) return 0.0f;
+        return (float) downloadedSize / (float) fileSize * 100;
     }
 
 }
