@@ -1,0 +1,67 @@
+version: '3.8'
+
+services:
+  tmd-app:
+    build: 
+      context: .
+      dockerfile: Dockerfile
+    container_name: telegram-media-downloader
+    image: telegram-media-downloader:latest
+    ports:
+      - "3222:3222"
+    environment:
+      - APP_ID=${APP_ID}
+      - API_HASH=${API_HASH}
+      - Test=${Test:-false}
+      - TZ=Asia/Shanghai
+      - JAVA_OPTS=-Xmx512m -Xms256m -XX:+UseG1GC
+      - SERVER_PORT=3222
+      - LOGGING_LEVEL_ROOT=INFO
+    volumes:
+      - ./data:/app/data
+      - ./downloads:/app/downloads
+      - ./logs:/app/logs
+      - ./config:/app/config:ro
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3222/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "50m"
+        max-file: "5"
+        compress: "true"
+    networks:
+      - tmd-network
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+          cpus: '1.0'
+        reservations:
+          memory: 512M
+          cpus: '0.5'
+    security_opt:
+      - no-new-privileges:true
+    read_only: false
+    tmpfs:
+      - /tmp:rw,noexec,nosuid,size=100m
+
+networks:
+  tmd-network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16
+
+volumes:
+  tmd-data:
+    driver: local
+  tmd-downloads:
+    driver: local
+  tmd-logs:
+    driver: local

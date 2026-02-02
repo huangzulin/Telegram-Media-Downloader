@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>视频目录访问测试</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .test-section {
+            margin: 20px 0;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            background: #fafafa;
+        }
+        button {
+            padding: 10px 15px;
+            margin: 5px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            background: #007bff;
+            color: white;
+        }
+        button:hover {
+            background: #0056b3;
+        }
+        .result {
+            margin: 10px 0;
+            padding: 10px;
+            border-radius: 4px;
+            font-family: monospace;
+        }
+        .success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>downloads/videos 目录访问测试</h1>
+        
+        <div class="test-section">
+            <h2>1. 测试视频文件直接访问</h2>
+            <button onclick="testDirectAccess()">测试直接访问</button>
+            <div id="direct-result" class="result"></div>
+        </div>
+
+        <div class="test-section">
+            <h2>2. 测试视频播放</h2>
+            <button onclick="testVideoPlayback()">测试视频播放</button>
+            <div id="playback-result" class="result"></div>
+            <div id="video-container"></div>
+        </div>
+
+        <div class="test-section">
+            <h2>3. 测试目录列表API</h2>
+            <button onclick="testDirectoryListing()">测试目录列表</button>
+            <div id="directory-result" class="result"></div>
+        </div>
+    </div>
+
+    <script>
+        // 测试直接访问视频文件
+        async function testDirectAccess() {
+            const resultDiv = document.getElementById('direct-result');
+            const filename = '极品大长腿丝袜御姐 小林的涩涩日常 SVIP1月13日新作  被下属反攻的女上司.mp4';
+            const videoUrl = `/downloads/videos/${encodeURIComponent(filename)}`;
+            
+            resultDiv.innerHTML = `<p>正在测试访问: ${videoUrl}</p>`;
+            
+            try {
+                const response = await fetch(videoUrl, { method: 'HEAD' });
+                if (response.ok) {
+                    const contentType = response.headers.get('Content-Type');
+                    const contentLength = response.headers.get('Content-Length');
+                    resultDiv.innerHTML = `
+                        <div class="success">
+                            ✓ 视频文件访问成功<br>
+                            状态码: ${response.status}<br>
+                            Content-Type: ${contentType || '未知'}<br>
+                            Content-Length: ${contentLength || '未知'} bytes
+                        </div>
+                    `;
+                } else {
+                    resultDiv.innerHTML = `
+                        <div class="error">
+                            ✗ 访问失败<br>
+                            状态码: ${response.status}<br>
+                            状态文本: ${response.statusText}
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `
+                    <div class="error">
+                        ✗ 请求失败<br>
+                        错误信息: ${error.message}
+                    </div>
+                `;
+            }
+        }
+
+        // 测试视频播放
+        function testVideoPlayback() {
+            const resultDiv = document.getElementById('playback-result');
+            const container = document.getElementById('video-container');
+            const filename = '极品大长腿丝袜御姐 小林的涩涩日常 SVIP1月13日新作  被下属反攻的女上司.mp4';
+            const videoUrl = `/downloads/videos/${encodeURIComponent(filename)}`;
+            
+            resultDiv.innerHTML = `<p>准备播放视频: ${filename}</p>`;
+            
+            container.innerHTML = `
+                <div style="margin-top: 15px; border: 1px solid #ccc; padding: 10px; border-radius: 5px;">
+                    <h3>视频播放测试</h3>
+                    <video controls width="100%" height="300" preload="metadata">
+                        <source src="${videoUrl}" type="video/mp4">
+                        您的浏览器不支持视频播放。
+                    </video>
+                    <p><small>如果视频正常播放，说明静态资源配置正确</small></p>
+                </div>
+            `;
+            
+            resultDiv.innerHTML += `
+                <div class="success">
+                    ✓ 视频播放器已创建<br>
+                    视频URL: ${videoUrl}
+                </div>
+            `;
+        }
+
+        // 测试目录列表API
+        async function testDirectoryListing() {
+            const resultDiv = document.getElementById('directory-result');
+            resultDiv.innerHTML = '<p>正在获取目录列表...</p>';
+            
+            try {
+                const response = await fetch('/api/debug/filesystem-files');
+                if (response.ok) {
+                    const data = await response.json();
+                    resultDiv.innerHTML = `
+                        <div class="success">
+                            ✓ 目录列表获取成功<br>
+                            文件总数: ${data.data ? data.data.length : 0}<br>
+                            <pre>${JSON.stringify(data, null, 2)}</pre>
+                        </div>
+                    `;
+                } else {
+                    resultDiv.innerHTML = `
+                        <div class="error">
+                            ✗ 获取目录列表失败<br>
+                            状态码: ${response.status}
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `
+                    <div class="error">
+                        ✗ 请求失败<br>
+                        错误信息: ${error.message}
+                    </div>
+                `;
+            }
+        }
+
+        // 页面加载完成后的初始化
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('测试页面已加载');
+        });
+    </script>
+</body>
+</html>

@@ -16,4 +16,19 @@ public interface DownloadItemService extends IService<DownloadItem> {
     List<DownloadItem> getDownloadingItemsFromDB();
 
     List<DownloadItem> getDownloading();
+    
+    boolean removeByUniqueId(String uniqueId);
+    
+    /**
+     * 根据标签搜索下载项
+     * @param tag 标签名称
+     * @return 匹配的下载项列表
+     */
+    List<DownloadItem> searchByTag(String tag);
+    
+    /**
+     * 获取所有唯一的标签
+     * @return 标签列表
+     */
+    List<String> getAllUniqueTags();
 }

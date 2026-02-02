@@ -1,24 +1,165 @@
 server:
-  port: 3222
+  port: ${SERVER_PORT:3222}
+  servlet:
+    context-path: /
+    encoding:
+      charset: UTF-8
+      enabled: true
+      force: true
+  compression:
+    enabled: true
+    mime-types: text/html,text/xml,text/plain,text/css,text/javascript,application/javascript,application/json
+    min-response-size: 1024
+  
 spring:
   application:
-    name: tmd
+    name: telegram-media-downloader
+  
+  # Jackson配置
   jackson:
     date-format: yyyy-MM-dd HH:mm:ss
-    time-zone: GMT+8
-
+    time-zone: Asia/Shanghai
+    serialization:
+      write-dates-as-timestamps: false
+      fail-on-empty-beans: false
+    deserialization:
+      fail-on-unknown-properties: false
+      fail-on-null-for-primitives: false
+    default-property-inclusion: non_null
+  
+  # 数据源配置
   datasource:
     driver-class-name: org.sqlite.JDBC
-    url: jdbc:sqlite:data/tmd.db?date_string_format=yyyy-MM-dd HH:mm:ss
+    url: jdbc:sqlite:${DB_PATH:data/tmd.db}?date_string_format=yyyy-MM-dd HH:mm:ss
     hikari:
-      maximum-pool-size: 1
+      maximum-pool-size: 5
+      minimum-idle: 2
+      connection-timeout: 30000
+      idle-timeout: 600000
+      max-lifetime: 1800000
+      leak-detection-threshold: 60000
+      validation-timeout: 5000
+  
+  # Actuator配置
+  boot:
+    admin:
+      client:
+        url: http://localhost:8080
+  
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+      base-path: /actuator
+      cors:
+        allowed-origins: "*"
+        allowed-methods: GET,POST
+  endpoint:
+    health:
+      show-details: always
+      probes:
+        enabled: true
+    metrics:
+      enabled: true
+    prometheus:
+      enabled: true
+      
+# WebSocket配置
+websocket:
+  allowed-origins: "*"
+  heartbeat-time: 30000
+  message-size-limit: 65536
+  send-timeout: 10000
+  disconnect-delay: 30000
+  metrics:
+    export:
+      prometheus:
+        enabled: true
+    distribution:
+      percentiles-histogram:
+        http.server.requests: true
+      sla:
+        http.server.requests: 1ms,5ms,10ms,50ms,100ms,200ms,500ms,1s,2s,5s,10s
+    web:
+      server:
+        request:
+          autotime:
+            enabled: true
+  
+  # 日志配置
+  output:
+    ansi:
+      enabled: detect
 
+# MyBatis Plus配置
 mybatis-plus:
-  #  configuration:
-  #    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+  configuration:
+    map-underscore-to-camel-case: true
+    cache-enabled: false
+    log-impl: org.apache.ibatis.logging.slf4j.Slf4jImpl
+    call-setters-on-nulls: true
+    jdbc-type-for-null: 'null'
+  global-config:
+    db-config:
+      logic-delete-field: deleted
+      logic-delete-value: 1
+      logic-not-delete-value: 0
+      id-type: auto
   date-format: yyyy-MM-dd HH:mm:ss
+
+# Auto Table配置
 auto-table:
-  enable: true
+  enable: false
+  
+# 自定义应用配置
+tmd:
+  download:
+    max-concurrent: 3
+    timeout-minutes: 30
+    retry-count: 3
+    chunk-size: 1048576  # 1MB
+    progress-update-interval: 1000  # 1秒
+  storage:
+    download-dir: ${DOWNLOAD_DIR:downloads}
+    data-dir: ${DATA_DIR:data}
+    max-storage-size: 10GB
+    cleanup:
+      expired-days: 7
+      auto-cleanup: true
+  websocket:
+    heartbeat-interval: 30000
+    session-timeout: 3600000
+    buffer-size: 8192
+  
+logging:
+  level:
+    root: INFO
+    fun.zulin.tmd: DEBUG
+    org.springframework.web: INFO
+    org.mybatis: DEBUG
+    com.zaxxer.hikari: WARN
+  pattern:
+    console: "%clr(%d{yyyy-MM-dd HH:mm:ss.SSS}){faint} %clr(${LOG_LEVEL_PATTERN:-%5p}) %clr(${PID:- }){magenta} %clr(---){faint} %clr([%15.15t]){faint} %clr(%-40.40logger{39}){cyan} %clr(:){faint} %m%n${LOG_EXCEPTION_CONVERSION_WORD:-%wEx}"
+    file: "%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n"
+  file:
+    name: ${LOG_FILE:logs/tmd.log}
+    max-size: 10MB
+    max-history: 30
+    total-size-cap: 100MB
+    clean-history-on-start: true
+  
+springdoc:
+  swagger-ui:
+    path: /swagger-ui.html
+    tags-sorter: alpha
+    operations-sorter: alpha
+  api-docs:
+    path: /v3/api-docs
+  group-configs:
+    - group: 'default'
+      paths-to-match: '/**'
+      packages-to-scan: fun.zulin.tmd
 
 
 

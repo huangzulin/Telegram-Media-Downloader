@@ -35,3 +35,4 @@ build/
 /tmd.db
 /downloads/
 /data/
+/logs/tmd.log

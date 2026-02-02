@@ -28,6 +28,16 @@ public class DownloadItem {
     private Long id;
 
 
+    /**
+     * 原始文件描述，可能包含特殊字符
+     * 用于显示和用户界面展示
+     */
+    private String description;
+
+    /**
+     * 实际文件系统中的文件名
+     * 已经过处理，去除特殊字符，适合作为文件名使用
+     */
     private String filename;
 
     private Integer fileId;
@@ -41,10 +51,17 @@ public class DownloadItem {
     private long fileSize;
 
 
+
     private long downloadedSize;
 
 
     private String caption;
+
+    /**
+     * 视频标签，用于分类和搜索
+     * 存储格式：tag1,tag2,tag3
+     */
+    private String tags;
 
     @Ignore
     @TableField(exist = false)

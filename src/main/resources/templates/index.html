@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Tmd</title>
+    <link rel="stylesheet" href="/css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <div class="container">
+        <!-- 头部 -->
+        <header class="app-header">
+            <div class="header-main">
+                <h1><i class="fab fa-telegram"></i>
+                    <div class="app-title-text">TMD</div>
+                </h1>
+                <div class="header-stats">
+                    <div class="stat-item">
+                        <i class="fas fa-download"></i>
+                        <span class="stat-value" id="total-downloads-header">0</span>
+                        <span class="stat-text">总下载</span>
+                    </div>
+                    <div class="stat-item">
+                        <i class="fas fa-hourglass-half"></i>
+                        <span class="stat-value" id="active-downloads-header">0</span>
+                        <span class="stat-text">进行中</span>
+                    </div>
+                    <div class="stat-item">
+                        <i class="fas fa-check"></i>
+                        <span class="stat-value" id="completed-downloads-header">0</span>
+                        <span class="stat-text">已完成</span>
+                    </div>
+                </div>
+            </div>
+            <div class="header-actions">
+                <button class="btn btn-primary" onclick="window.location.href='/videos'">
+                    <i class="fas fa-film"></i>
+                    <div class="action-text">视频库</div>
+                </button>
+            </div>
+        </header>
+
+        <!-- 主要内容区域 -->
+        <main class="main-content">
+            <!-- 登录区域 -->
+            <section class="login-section" id="login-section">
+                <div class="card">
+                    <h2><i class="fas fa-qrcode"></i> 扫码登录</h2>
+                    <div class="qr-container">
+                        <div class="qr-placeholder" id="qr-placeholder">
+                            <i class="fas fa-spinner fa-spin"></i>
+                            <p>正在生成二维码...</p>
+                        </div>
+                        <img id="qr-code" class="qr-code" style="display: none;" alt="Telegram 登录二维码">
+                    </div>
+                    <p class="instructions">请使用 Telegram 扫描上方二维码进行登录</p>
+                </div>
+            </section>
+
+            <!-- 下载列表 -->
+            <section class="downloads-section">
+                <div class="section-header">
+                    <div class="filter-tabs">
+                        <button class="tab-btn active" data-filter="downloading">下载中</button>
+                        <button class="tab-btn" data-filter="completed">已完成</button>
+                    </div>
+                </div>
+
+                <div class="downloads-container">
+                    <div class="empty-state" id="empty-state">
+                        <i class="fas fa-inbox"></i>
+                        <p>暂无下载任务</p>
+                        <small>发送 Telegram 链接到 Saved Messages 开始下载</small>
+                    </div>
+                    <div class="downloads-list" id="downloads-list"></div>
+                </div>
+            </section>
+        </main>
+
+        <!-- 底部 -->
+        <footer class="footer">
+            <div class="footer-content">
+                <p>&copy; 2026 Telegram 媒体下载器 | 
+                   <a href="/actuator/health" target="_blank">健康检查</a> | 
+                   <a href="/swagger-ui.html" target="_blank">API 文档</a>
+                </p>
+            </div>
+        </footer>
+    </div>
+
+    <!-- Toast 通知 -->
+    <div class="toast-container" id="toast-container"></div>
+
+    <!-- 加载脚本 -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/sockjs-client/1.6.1/sockjs.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/stomp.js/2.3.3/stomp.min.js"></script>
+    <script src="/js/main.js"></script>
+</body>
+</html>

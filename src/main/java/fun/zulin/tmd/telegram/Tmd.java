@@ -2,8 +2,10 @@ package fun.zulin.tmd.telegram;
 
 
 import cn.hutool.core.convert.Convert;
+import cn.hutool.core.io.resource.ResourceUtil;
 import cn.hutool.core.util.BooleanUtil;
 import cn.hutool.core.util.StrUtil;
+import cn.hutool.setting.dialect.Props;
 import fun.zulin.tmd.telegram.handler.AuthorizationStateWaitOtherDeviceConfirmationHandler;
 import fun.zulin.tmd.telegram.handler.UpdateFileHandler;
 import fun.zulin.tmd.telegram.handler.UpdateNewMessageHandler;
@@ -18,9 +20,12 @@ import org.springframework.context.event.EventListener;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Component;
 
+import java.io.File;
+import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Properties;
 import java.util.concurrent.TimeUnit;
 
 
@@ -42,9 +47,32 @@ public class Tmd {
         Init.init();
         Log.setLogMessageHandler(1, new Slf4JLogMessageHandler());
 
-        var appId = System.getenv("APP_ID");
-        var apiHash = System.getenv("API_HASH");
-        var test = Boolean.valueOf(StrUtil.emptyToDefault(System.getenv("Test"), "false"));
+        // 优先从.env文件读取配置，fallback到环境变量
+        Properties props = new Properties();
+        boolean envFileLoaded = false;
+        
+        try {
+            // 尝试从项目根目录加载.env文件
+            File envFile = new File(".env");
+            if (envFile.exists()) {
+                try (InputStream inputStream = Files.newInputStream(envFile.toPath())) {
+                    props.load(inputStream);
+                    envFileLoaded = true;
+                    System.out.println("成功从项目根目录加载.env文件");
+                }
+            }
+        } catch (Exception e) {
+            System.err.println("加载.env文件时出现错误: " + e.getMessage());
+        }
+        
+        if (!envFileLoaded) {
+            System.err.println(".env文件未找到，将使用环境变量");
+        }
+        
+        var appId = StrUtil.blankToDefault(props.getProperty("APP_ID"), System.getenv("APP_ID"));
+        var apiHash = StrUtil.blankToDefault(props.getProperty("API_HASH"), System.getenv("API_HASH"));
+        var testStr = StrUtil.blankToDefault(props.getProperty("Test"), System.getenv("Test"));
+        var test = Boolean.valueOf(StrUtil.emptyToDefault(testStr, "false"));
 
         APIToken apiToken = new APIToken(Convert.toInt(appId), apiHash);
         TDLibSettings settings = TDLibSettings.create(apiToken);
