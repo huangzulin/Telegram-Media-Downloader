@@ -99,6 +99,46 @@ body {
     gap: var(--spacing-md);
 }
 
+/* 认证和连接状态样式 */
+.header-status {
+    display: flex;
+    gap: var(--spacing-md);
+    align-items: center;
+}
+
+.status-item {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-xs);
+    padding: var(--spacing-xs) var(--spacing-sm);
+    background: var(--bg-light);
+    border-radius: 20px;
+    font-size: 0.9rem;
+    white-space: nowrap;
+}
+
+.status-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    transition: all var(--transition-fast);
+}
+
+.status-dot.connected {
+    background: var(--success-color);
+    box-shadow: 0 0 0 2px rgba(40, 167, 69, 0.3);
+}
+
+.status-dot.disconnected {
+    background: var(--danger-color);
+    box-shadow: 0 0 0 2px rgba(220, 53, 69, 0.3);
+}
+
+.status-dot.authenticated {
+    background: var(--primary-color);
+    box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.3);
+}
+
 .stat-item {
     display: flex;
     align-items: center;
@@ -593,52 +633,7 @@ body {
     color: var(--danger-color);
 }
 
-/* Toast 通知 */
-.toast-container {
-    position: fixed;
-    top: var(--spacing-xl);
-    right: var(--spacing-xl);
-    z-index: 1000;
-}
 
-.toast {
-    background: var(--bg-white);
-    border-radius: var(--border-radius);
-    box-shadow: var(--box-shadow-hover);
-    padding: var(--spacing-md) var(--spacing-lg);
-    margin-bottom: var(--spacing-sm);
-    display: flex;
-    align-items: center;
-    gap: var(--spacing-md);
-    min-width: 300px;
-    transform: translateX(100%);
-    animation: slideIn var(--transition-normal) forwards;
-    border-left: 4px solid var(--primary-color);
-}
-
-.toast.success {
-    border-left-color: var(--success-color);
-}
-
-.toast.error {
-    border-left-color: var(--danger-color);
-}
-
-.toast.warning {
-    border-left-color: var(--warning-color);
-}
-
-@keyframes slideIn {
-    to { transform: translateX(0); }
-}
-
-@keyframes slideOut {
-    to { transform: translateX(100%); }
-}
-
-.toast.hide {
-    animation: slideOut var(--transition-normal) forwards;
-}
 
 /* 底部 */
 .footer {
@@ -1093,18 +1088,7 @@ body {
         font-size: 0.8rem;
     }
     
-    /* Toast通知优化 */
-    .toast-container {
-        top: 1rem;
-        right: 1rem;
-        left: 1rem;
-    }
-    
-    .toast {
-        min-width: auto;
-        padding: 0.75rem;
-        font-size: 0.85rem;
-    }
+
 }
 
 /* 超小屏幕极致优化 (480px及以下) */
@@ -1261,10 +1245,7 @@ body {
         font-size: 0.7rem;
     }
     
-    .toast {
-        padding: 0.5rem;
-        font-size: 0.75rem;
-    }
+
 }
 
 /* 移动端视频库链接样式已移除，保持PC端显示效果 */

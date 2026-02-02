@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Tmd</title>
-    <link rel="stylesheet" href="/css/style.css">
+    <link rel="stylesheet" href="/css/style.css?v=1.1">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
 <body>
@@ -15,21 +15,14 @@
                 <h1><i class="fab fa-telegram"></i>
                     <div class="app-title-text">TMD</div>
                 </h1>
-                <div class="header-stats">
-                    <div class="stat-item">
-                        <i class="fas fa-download"></i>
-                        <span class="stat-value" id="total-downloads-header">0</span>
-                        <span class="stat-text">总下载</span>
+                <div class="header-status">
+                    <div class="status-item" id="auth-status">
+                        <div class="status-dot disconnected"></div>
+                        <span>未认证</span>
                     </div>
-                    <div class="stat-item">
-                        <i class="fas fa-hourglass-half"></i>
-                        <span class="stat-value" id="active-downloads-header">0</span>
-                        <span class="stat-text">进行中</span>
-                    </div>
-                    <div class="stat-item">
-                        <i class="fas fa-check"></i>
-                        <span class="stat-value" id="completed-downloads-header">0</span>
-                        <span class="stat-text">已完成</span>
+                    <div class="status-item" id="connection-status">
+                        <div class="status-dot disconnected"></div>
+                        <span>未连接</span>
                     </div>
                 </div>
             </div>
@@ -89,8 +82,7 @@
         </footer>
     </div>
 
-    <!-- Toast 通知 -->
-    <div class="toast-container" id="toast-container"></div>
+
 
     <!-- 加载脚本 -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/sockjs-client/1.6.1/sockjs.min.js"></script>

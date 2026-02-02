@@ -176,32 +176,37 @@ class VideoGallery {
 
     // 处理搜索输入
     handleSearchInput(searchTerm) {
-        const clearBtn = document.getElementById('clearSearchBtn');
-        const searchTips = document.getElementById('searchTips');
+        // 安全获取DOM元素
+        const searchStatus = document.getElementById('searchStatus');
         
-        if (searchTerm.trim()) {
-            clearBtn.style.display = 'inline-flex';
-            // 显示搜索提示
-            if (searchTips) {
-                searchTips.style.display = 'block';
-                setTimeout(() => {
-                    if (searchTips) {
-                        searchTips.style.display = 'none';
-                    }
-                }, 3000);
+        // 显示搜索状态指示器（增加安全检查）
+        if (searchTerm.trim() && searchStatus) {
+            try {
+                searchStatus.style.display = 'flex';
+            } catch (e) {
+                console.warn('无法设置搜索状态显示:', e);
             }
-        } else {
-            clearBtn.style.display = 'none';
-            if (searchTips) {
-                searchTips.style.display = 'none';
+        } else if (searchStatus) {
+            try {
+                searchStatus.style.display = 'none';
+            } catch (e) {
+                console.warn('无法隐藏搜索状态显示:', e);
             }
         }
         
-        // 实时搜索（防抖）
+        // 实时搜索（优化防抖）
         clearTimeout(this.searchTimeout);
         this.searchTimeout = setTimeout(() => {
             this.performUnifiedSearch(searchTerm);
-        }, 300);
+            // 搜索完成后隐藏状态指示器
+            if (searchStatus) {
+                try {
+                    searchStatus.style.display = 'none';
+                } catch (e) {
+                    console.warn('搜索完成后无法隐藏状态显示:', e);
+                }
+            }
+        }, 200); // 缩短到200ms，提升响应速度
     }
 
     // 执行搜索
@@ -214,10 +219,10 @@ class VideoGallery {
     // 清除搜索
     clearSearch() {
         const searchInput = document.getElementById('searchInput');
-        const clearBtn = document.getElementById('clearSearchBtn');
         
-        searchInput.value = '';
-        clearBtn.style.display = 'none';
+        if (searchInput) {
+            searchInput.value = '';
+        }
         
         // 显示所有视频
         this.filteredVideos = [...this.videos];
@@ -291,8 +296,15 @@ class VideoGallery {
         const totalVideos = this.videos.length;
         const totalSize = this.videos.reduce((sum, video) => sum + video.fileSize, 0);
         
-        document.getElementById('totalVideos').textContent = totalVideos;
-        document.getElementById('totalSize').textContent = this.formatFileSize(totalSize);
+        const totalVideosEl = document.getElementById('totalVideos');
+        const totalSizeEl = document.getElementById('totalSize');
+        
+        if (totalVideosEl) {
+            totalVideosEl.textContent = totalVideos;
+        }
+        if (totalSizeEl) {
+            totalSizeEl.textContent = this.formatFileSize(totalSize);
+        }
     }
 
     renderVideos() {
@@ -304,19 +316,39 @@ class VideoGallery {
         
         if (this.filteredVideos.length === 0) {
             if (emptyState) {
-                emptyState.style.display = 'block';
+                try {
+                    emptyState.style.display = 'block';
+                } catch (e) {
+                    console.warn('无法显示空状态:', e);
+                }
             }
-            list.innerHTML = '';
+            try {
+                list.innerHTML = '';
+            } catch (e) {
+                console.warn('无法清空列表:', e);
+            }
             if (emptyState) {
-                list.appendChild(emptyState);
+                try {
+                    list.appendChild(emptyState);
+                } catch (e) {
+                    console.warn('无法添加空状态元素:', e);
+                }
             }
             return;
         }
         
         if (emptyState) {
-            emptyState.style.display = 'none';
+            try {
+                emptyState.style.display = 'none';
+            } catch (e) {
+                console.warn('无法隐藏空状态:', e);
+            }
         }
-        list.innerHTML = this.filteredVideos.map(video => this.createVideoListItem(video)).join('');
+        try {
+            list.innerHTML = this.filteredVideos.map(video => this.createVideoListItem(video)).join('');
+        } catch (e) {
+            console.error('渲染视频列表失败:', e);
+        }
     }
 
     renderTagsCloud() {
@@ -815,12 +847,6 @@ class VideoGallery {
 function performSearch() {
     if (gallery) {
         gallery.performSearch();
-    }
-}
-
-function clearSearch() {
-    if (gallery) {
-        gallery.clearSearch();
     }
 }
 

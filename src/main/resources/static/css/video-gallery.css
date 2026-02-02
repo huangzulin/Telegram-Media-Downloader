@@ -192,6 +192,21 @@
     border-color: #0056b3;
 }
 
+.search-status {
+    position: absolute;
+    right: 45px; /* 位于搜索按钮左侧 */
+    top: 50%;
+    transform: translateY(-50%);
+    color: #007bff;
+    font-size: 14px;
+    display: flex;
+    align-items: center;
+}
+
+.search-container {
+    position: relative;
+}
+
 .filter-options {
     display: flex;
     gap: 10px;
@@ -332,7 +347,6 @@
 }
 
 .sort-select {
-    padding: 10px 15px;
     border: 1px solid #ddd;
     border-radius: 5px;
     background: white;
@@ -1146,10 +1160,6 @@
     }
 
     .return-text {
-        display: none;
-    }
-
-    .reflash-text {
         display: none;
     }
 

@@ -33,10 +33,7 @@
                 <i class="fas fa-arrow-left"></i>
                 <div class="return-text">返回主页</div>
             </button>
-            <button class="btn btn-primary" onclick="refreshGallery()">
-                <i class="fas fa-sync-alt"></i>
-                <div class="reflash-text"> 刷新</div>
-            </button>
+
         </div>
     </header>
 
@@ -46,6 +43,9 @@
             <button class="search-btn" onclick="performSearch()">
                 <i class="fas fa-search"></i>
             </button>
+            <div class="search-status" id="searchStatus" style="display: none;">
+                <i class="fas fa-spinner fa-spin"></i>
+            </div>
         </div>
         <div class="filter-options">
             <select id="sortSelect" class="sort-select">
@@ -56,9 +56,7 @@
                 <option value="size-desc">按大小降序</option>
                 <option value="size-asc">按大小升序</option>
             </select>
-            <button class="btn btn-secondary" id="clearSearchBtn" style="display: none;" onclick="clearSearch()">
-                <i class="fas fa-times"></i> 清除
-            </button>
+
         </div>
     </div>
 
@@ -125,9 +123,6 @@
                     </video>
                 </div>
                 <div class="video-info">
-                    <div class="info-item">
-                        <strong>文件名:</strong> <span id="modalFilename"></span>
-                    </div>
                     <div class="info-item">
                         <strong>文件大小:</strong> <span id="modalFileSize"></span>
                     </div>

@@ -29,13 +29,12 @@ class TelegramMediaDownloader {
         this.downloadsList = document.getElementById('downloads-list');
         this.emptyState = document.getElementById('empty-state');
 
-        // 头部统计数字
-        this.totalDownloadsHeader = document.getElementById('total-downloads-header');
-        this.activeDownloadsHeader = document.getElementById('active-downloads-header');
-        this.completedDownloadsHeader = document.getElementById('completed-downloads-header');
+        // 头部统计数字（已移除）
+        // this.totalDownloadsHeader = document.getElementById('total-downloads-header');
+        // this.activeDownloadsHeader = document.getElementById('active-downloads-header');
+        // this.completedDownloadsHeader = document.getElementById('completed-downloads-header');
 
-        // Toast容器
-        this.toastContainer = document.getElementById('toast-container');
+
     }
 
     bindEvents() {
@@ -66,7 +65,7 @@ class TelegramMediaDownloader {
             // 检查必要的库是否加载
             if (typeof SockJS === 'undefined') {
                 console.error('SockJS库未加载');
-                this.showToast('WebSocket库加载失败', 'error');
+                console.error('WebSocket库加载失败');
                 return;
             }
             
@@ -79,7 +78,7 @@ class TelegramMediaDownloader {
             // 检查STOMP库是否可用
             if (!Stomp) {
                 console.error('STOMP库不可用');
-                this.showToast('STOMP库加载失败', 'error');
+                console.error('STOMP库加载失败');
                 return;
             }
             
@@ -95,7 +94,6 @@ class TelegramMediaDownloader {
                     console.log('WebSocket连接已建立:', frame);
                     this.isConnected = true;
                     this.updateConnectionStatus(true);
-                    this.showToast('已连接到服务器', 'success');
                     
                     // 订阅各个主题
                     this.subscribeToTopics();
@@ -117,7 +115,6 @@ class TelegramMediaDownloader {
                     console.log('WebSocket连接已建立');
                     this.isConnected = true;
                     this.updateConnectionStatus(true);
-                    this.showToast('已连接到服务器', 'success');
                 };
 
                 this.ws.onmessage = (event) => {
@@ -133,7 +130,7 @@ class TelegramMediaDownloader {
 
                 this.ws.onerror = (error) => {
                     console.error('WebSocket错误:', error);
-                    this.showToast('连接出现错误', 'error');
+                    console.error('连接出现错误');
                 };
             }
         } catch (error) {
@@ -269,7 +266,7 @@ class TelegramMediaDownloader {
         } else {
             console.error('无效的二维码链接:', link);
             console.error('链接类型:', typeof link);
-            this.showToast('接收到无效的二维码链接: ' + (link || '空值'), 'error');
+            console.error('接收到无效的二维码链接: ' + (link || '空值'));
         }
     }
 
@@ -293,7 +290,7 @@ class TelegramMediaDownloader {
             img.onload = () => {
                 console.log('外部二维码图片加载成功');
                 this.displayQRCode(qrUrl);
-                this.showToast('二维码已生成（使用外部服务）', 'success');
+                console.log('二维码已生成（使用外部服务）');
             };
             img.onerror = (error) => {
                 console.error('外部二维码图片加载失败:', error);
@@ -304,7 +301,7 @@ class TelegramMediaDownloader {
         } catch (error) {
             console.error('外部服务生成二维码失败:', error);
             this.displayQRCode(null);
-            this.showToast('所有二维码生成服务都不可用', 'error');
+            console.error('所有二维码生成服务都不可用');
         }
     }
 
@@ -312,7 +309,7 @@ class TelegramMediaDownloader {
         if (services.length === 0) {
             console.error('所有二维码服务都不可用');
             this.displayQRCode(null);
-            this.showToast('所有二维码生成服务都不可用', 'error');
+            console.error('所有二维码生成服务都不可用');
             return;
         }
         
@@ -323,7 +320,7 @@ class TelegramMediaDownloader {
         img.onload = () => {
             console.log('备用服务二维码生成成功');
             this.displayQRCode(backupService);
-            this.showToast('二维码已生成（使用备用服务）', 'success');
+            console.log('二维码已生成（使用备用服务）');
         };
         img.onerror = () => {
             console.error('备用服务失败，尝试下一个');
@@ -356,7 +353,7 @@ class TelegramMediaDownloader {
             if (result.success && result.data && result.data.image) {
                 console.log('本地二维码生成成功');
                 this.displayQRCode(result.data.image);
-                this.showToast('二维码已生成', 'success');
+                console.log('二维码已生成');
             } else {
                 throw new Error(result.message || '二维码生成失败');
             }
@@ -376,7 +373,6 @@ class TelegramMediaDownloader {
             this.updateAuthStatus(true);
             this.loginSection.style.display = 'none';
             // controlPanel已被移除，无需显示
-            this.showToast('认证成功', 'success');
         } else if (data.qrCode) {
             this.displayQRCode(data.qrCode);
         }
@@ -504,7 +500,7 @@ class TelegramMediaDownloader {
             this.downloadingItems = [];
             this.completedItems = [];
             this.updateDownloadStats();
-            //this.showToast('加载数据失败', 'error');
+            //console.error('加载数据失败');
         }
     }
 
@@ -519,7 +515,6 @@ class TelegramMediaDownloader {
                 this.loginSection.style.display = 'none';
                 // this.controlPanel.style.display = 'block'; // 已移除控制面板
                 this.updateAuthStatus(true);
-                this.showToast('用户已认证', 'success');
                 console.log('用户认证成功');
             } else {
                 // 用户未认证
@@ -852,9 +847,9 @@ class TelegramMediaDownloader {
         this.showLoading(this.refreshBtn);
         try {
             await this.loadInitialData();
-            this.showToast('数据已刷新', 'success');
+            console.log('数据已刷新');
         } catch (error) {
-            this.showToast('刷新失败', 'error');
+            console.error('刷新失败');
         } finally {
             this.hideLoading(this.refreshBtn);
         }
@@ -958,28 +953,7 @@ class TelegramMediaDownloader {
     
     // 智能更新UI - 只更新有变化的部分
     smartUpdateUI() {
-        // 更新统计信息
-        const newStats = {
-            total: this.downloadingItems.length + this.completedItems.length,
-            active: this.downloadingItems.length,
-            completed: this.completedItems.length
-        };
-        
-        // 只在统计数字变化时更新
-        if (newStats.total !== this.lastStats.total || 
-            newStats.active !== this.lastStats.active || 
-            newStats.completed !== this.lastStats.completed) {
-            
-            // 安全地更新头部统计元素
-            if (this.totalDownloadsHeader) this.totalDownloadsHeader.textContent = newStats.total;
-            if (this.activeDownloadsHeader) this.activeDownloadsHeader.textContent = newStats.active;
-            if (this.completedDownloadsHeader) this.completedDownloadsHeader.textContent = newStats.completed;
-            
-            this.lastStats = {...newStats};
-            console.log('统计信息已更新:', newStats);
-        }
-        
-        // 重新渲染下载列表
+        // 直接重新渲染下载列表
         this.renderDownloads();
     }
 
@@ -1035,12 +1009,12 @@ class TelegramMediaDownloader {
                 this.completedItems = [];
                 this.updateDownloadStats();
                 this.renderDownloads();
-                this.showToast('已完成任务已清理', 'success');
+                console.log('已完成任务已清理');
             } else {
                 throw new Error('清理失败');
             }
         } catch (error) {
-            this.showToast('清理失败: ' + error.message, 'error');
+            console.error('清理失败: ' + error.message);
         }
     }
 
@@ -1053,12 +1027,12 @@ class TelegramMediaDownloader {
             });
             
             if (response.ok) {
-                this.showToast('下载已暂停', 'success');
+                console.log('下载已暂停');
             } else {
                 throw new Error('操作失败');
             }
         } catch (error) {
-            this.showToast('暂停失败: ' + error.message, 'error');
+            console.error('暂停失败: ' + error.message);
         }
     }
 
@@ -1069,7 +1043,7 @@ class TelegramMediaDownloader {
                 .find(item => item.uniqueId === uniqueId);
             
             if (!item) {
-                this.showToast('未找到下载项', 'error');
+                console.error('未找到下载项');
                 return;
             }
             
@@ -1079,7 +1053,7 @@ class TelegramMediaDownloader {
             
         } catch (error) {
             console.error('打开文件夹失败:', error);
-            this.showToast('打开文件夹失败: ' + error.message, 'error');
+            console.error('打开文件夹失败: ' + error.message);
         }
     }
 
@@ -1090,12 +1064,12 @@ class TelegramMediaDownloader {
             });
             
             if (response.ok) {
-                this.showToast('下载已暂停', 'success');
+                console.log('下载已暂停');
             } else {
                 throw new Error('暂停失败');
             }
         } catch (error) {
-            this.showToast('暂停失败: ' + error.message, 'error');
+            console.error('暂停失败: ' + error.message);
         }
     }
 
@@ -1115,44 +1089,16 @@ class TelegramMediaDownloader {
                 this.completedItems = this.completedItems.filter(item => item.uniqueId !== uniqueId);
                 this.updateDownloadStats();
                 this.renderDownloads();
-                this.showToast('任务已删除', 'success');
+                console.log('任务已删除');
             } else {
                 throw new Error('删除失败');
             }
         } catch (error) {
-            this.showToast('删除失败: ' + error.message, 'error');
+            console.error('删除失败: ' + error.message);
         }
     }
 
-    showToast(message, type = 'info') {
-        const toast = document.createElement('div');
-        toast.className = `toast ${type}`;
-        toast.innerHTML = `
-            <i class="fas fa-${this.getToastIcon(type)}"></i>
-            <span>${message}</span>
-        `;
-        
-        this.toastContainer.appendChild(toast);
-        
-        // 3秒后自动移除
-        setTimeout(() => {
-            toast.classList.add('hide');
-            setTimeout(() => {
-                if (toast.parentNode) {
-                    toast.parentNode.removeChild(toast);
-                }
-            }, 300);
-        }, 3000);
-    }
 
-    getToastIcon(type) {
-        switch (type) {
-            case 'success': return 'check-circle';
-            case 'error': return 'exclamation-circle';
-            case 'warning': return 'exclamation-triangle';
-            default: return 'info-circle';
-        }
-    }
 
     showLoading(button) {
         const originalContent = button.innerHTML;
