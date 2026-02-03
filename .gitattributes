@@ -67,6 +67,7 @@ docker-compose.yml text eol=lf
 pom.xml text eol=lf
 .mvn/* text eol=lf
 mvnw text eol=lf
+mvnw export-exec
 mvnw.cmd text eol=crlf
 
 # Git files
