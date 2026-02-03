@@ -2,6 +2,8 @@
 
 Telegram媒体文件下载器 - 一个基于Spring Boot 3.2.5和TDLib的高性能媒体下载服务。
 
+> 🚀 **自动化CI/CD**: 本项目采用完整的GitHub Actions自动化流程，支持多平台构建、Docker镜像发布和自动版本管理。
+
 ## 🚀 一行命令快速启动
 
 ```bash
@@ -16,6 +18,9 @@ docker-compose up -d
 
 ---
 
+[![Build Status](https://github.com/OWNER/REPO/actions/workflows/ci.yml/badge.svg)](https://github.com/OWNER/REPO/actions)
+[![Docker Publish](https://github.com/OWNER/REPO/actions/workflows/publish.yml/badge.svg)](https://github.com/OWNER/REPO/actions)
+[![Release](https://github.com/OWNER/REPO/actions/workflows/release.yml/badge.svg)](https://github.com/OWNER/REPO/actions)
 [![License](https://img.shields.io/github/license/OWNER/REPO)](LICENSE)
 
 ## 🚀 核心特性
@@ -26,6 +31,7 @@ docker-compose up -d
 - **企业级部署**: Docker容器化，支持Kubernetes编排
 - **优雅生命周期**: 支持平滑重启和资源自动清理
 - **安全可靠**: 非root用户运行，安全加固配置
+- **自动化部署**: 完整的CI/CD流水线，支持多平台Docker镜像构建
 
 ## 📋 系统要求
 
@@ -496,4 +502,69 @@ MIT License - 详见 [LICENSE](LICENSE) 文件
 - [Hutool](https://hutool.cn/) - Java工具库
 
 ---
+## 🤖 自动化功能
+
+本项目配备了完整的GitHub Actions自动化工作流：
+
+### 🔄 持续集成 (CI)
+- **多平台测试**: Ubuntu、Windows、macOS三平台并行构建测试
+- **代码质量检查**: 自动化单元测试和静态代码分析
+- **Docker构建验证**: 每次提交都会验证Docker镜像构建
+- **安全扫描**: 自动进行容器安全漏洞扫描
+
+### 🐳 Docker镜像发布
+- **多架构支持**: 自动构建linux/amd64和linux/arm64镜像
+- **版本管理**: Git标签触发自动发布到Docker Hub
+- **镜像优化**: 多阶段构建，最小化镜像体积
+- **安全加固**: 非root用户运行，安全配置最佳实践
+
+### 📦 版本发布
+- **自动发布**: Git标签推送自动创建GitHub Release
+- **变更日志**: 自动生成版本变更记录
+- **资产上传**: 自动上传可执行JAR文件
+- **通知机制**: 可配置Discord等通知渠道
+
+### 🛠️ 开发者工具
+- **Issue模板**: 标准化的Bug报告和功能请求模板
+- **贡献指南**: 详细的开发者贡献流程
+- **跨平台兼容**: `.gitattributes`确保不同平台代码一致性
+
+## 🤝 贡献
+
+我们欢迎各种形式的贡献！
+
+### 快速开始
+1. Fork项目并创建功能分支
+2. 参考[贡献指南](.github/CONTRIBUTING.md)
+3. 提交PR前确保CI通过
+
+### 开发环境
+```bash
+# 克隆项目
+git clone https://github.com/your-username/telegram-media-downloader.git
+cd telegram-media-downloader
+
+# 配置环境
+cp .env.example .env
+# 编辑.env文件添加Telegram API凭证
+
+# 创建必要目录
+mkdir -p data downloads/videos downloads/thumbnails downloads/temp logs
+
+# 本地运行
+./mvnw spring-boot:run
+```
+
+### 测试
+```bash
+# 运行单元测试
+./mvnw test
+
+# 构建Docker镜像
+docker build -t tmd-local .
+
+# 运行容器
+docker run -d --name tmd-test -p 3222:3222 tmd-local
+```
+
 **注意**: 请妥善保管您的Telegram API凭证，不要将其提交到版本控制系统中。

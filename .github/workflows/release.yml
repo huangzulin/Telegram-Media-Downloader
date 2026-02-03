@@ -1,0 +1,88 @@
+name: Release Management
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+
+jobs:
+  create-release:
+    name: Create GitHub Release
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      
+    steps:
+    - name: Checkout Code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+        
+    - name: Setup Java
+      uses: actions/setup-java@v4
+      with:
+        java-version: '21'
+        distribution: 'temurin'
+        cache: 'maven'
+        
+    - name: Setup Maven
+      uses: stCarolas/setup-maven@v5
+      with:
+        maven-version: 3.9.7
+        
+    - name: Create Required Directories
+      run: |
+        mkdir -p data downloads/videos downloads/thumbnails downloads/temp logs config
+        chmod -R 755 downloads
+        chmod 777 downloads/videos downloads/thumbnails downloads/temp
+        
+    - name: Build Application
+      run: |
+        ./mvnw clean package -DskipTests -B
+        
+    - name: Get Release Info
+      id: release_info
+      run: |
+        VERSION=${GITHUB_REF#refs/tags/}
+        echo "version=${VERSION}" >> $GITHUB_OUTPUT
+        echo "tag=${VERSION}" >> $GITHUB_OUTPUT
+        
+    - name: Generate Changelog
+      id: changelog
+      run: |
+        # Generate changelog from git commits
+        echo "## What's Changed" > CHANGELOG.md
+        echo "" >> CHANGELOG.md
+        git log --pretty=format:"- %s (%h)" $(git describe --tags --abbrev=0 HEAD^ 2>/dev/null || echo "")..HEAD >> CHANGELOG.md
+        echo "" >> CHANGELOG.md
+        echo "See full changelog: https://github.com/${{ github.repository }}/compare/${{ github.event.before }}...${{ github.sha }}" >> CHANGELOG.md
+        
+    - name: Create Release
+      id: create_release
+      uses: actions/create-release@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        tag_name: ${{ steps.release_info.outputs.tag }}
+        release_name: Release ${{ steps.release_info.outputs.version }}
+        body_path: CHANGELOG.md
+        draft: false
+        prerelease: false
+        
+    - name: Upload JAR Asset
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ steps.create_release.outputs.upload_url }}
+        asset_path: ./target/tmd-1.0.jar
+        asset_name: tmd-${{ steps.release_info.outputs.version }}.jar
+        asset_content_type: application/java-archive
+        
+    - name: Notify Discord (Optional)
+      if: success() && secrets.DISCORD_WEBHOOK_URL != ''
+      run: |
+        curl -H "Content-Type: application/json" \
+          -X POST \
+          -d '{"content":"🚀 New release ${{ steps.release_info.outputs.version }} published!\n📦 Download: https://github.com/${{ github.repository }}/releases/tag/${{ steps.release_info.outputs.tag }}"}' \
+          ${{ secrets.DISCORD_WEBHOOK_URL }} || echo "Discord notification failed (but release succeeded)"
