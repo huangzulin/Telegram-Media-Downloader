@@ -115,7 +115,7 @@ Test=true
 java -jar target/tmd-1.0.jar
 ```
 
-> 💡 **平台适配说明**：项目使用Maven Profiles自动检测运行平台并引入对应的TDLib原生库依赖，支持Windows、Linux、macOS的x64和ARM64架构。
+> 💡 **平台适配说明**：项目使用Maven Profiles自动检测运行平台并引入对应的TDLib原生库依赖，支持Windows、Linux。
 
 ### 4. Docker一键部署
 
@@ -465,8 +465,6 @@ mvn package -DskipTests
 - **Windows x64**: `windows_amd64`
 - **Linux x64**: `linux_amd64_gnu_ssl3`
 - **Linux ARM64**: `linux_arm64_gnu_ssl3`
-- **macOS x64**: `macos_x64`
-- **macOS ARM64**: `macos_arm64`
 
 **手动指定平台编译：**
 ```bash
@@ -507,7 +505,7 @@ MIT License - 详见 [LICENSE](LICENSE) 文件
 本项目配备了完整的GitHub Actions自动化工作流：
 
 ### 🔄 持续集成 (CI)
-- **多平台测试**: Ubuntu、Windows、macOS三平台并行构建测试
+- **多平台测试**: Ubuntu、Windows 平台并行构建测试
 - **代码质量检查**: 自动化单元测试和静态代码分析
 - **Docker构建验证**: 每次提交都会验证Docker镜像构建
 - **安全扫描**: 自动进行容器安全漏洞扫描
