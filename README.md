@@ -3,6 +3,20 @@
 
 Telegram媒体文件下载器 - 一个基于Spring Boot 3.2.5和TDLib的高性能媒体下载服务。
 
+## 🚀 一行命令快速启动
+
+```bash
+# 克隆项目 → 配置API → 一行启动
+git clone https://github.com/your-repo/telegram-media-downloader.git
+cd telegram-media-downloader
+cp .env.example .env  # 编辑填入Telegram API凭证
+docker-compose up -d
+```
+
+> 🎯 **访问地址**: http://localhost:3222 - 立即开始使用！
+
+---
+
 [![License](https://img.shields.io/github/license/OWNER/REPO)](LICENSE)
 
 ## 🚀 核心特性
@@ -77,24 +91,34 @@ Test=false
 java -jar target/tmd-1.0.jar
 ```
 
-### 4. Docker部署
+### 4. Docker一键部署
 
 ```bash
-# 构建镜像
-docker-compose build
-
-# 启动服务
+# 一行命令启动（从Docker Hub拉取镜像）
 docker-compose up -d
 
-# 查看日志
-docker-compose logs -f tmd-app
+# 查看运行状态
+docker-compose ps
+
+# 查看实时日志
+docker-compose logs -f
 
 # 停止服务
 docker-compose down
 
-# 清理资源
+# 完全清理（包括数据卷）
 docker-compose down -v --remove-orphans
 ```
+
+### 🚀 超级简化部署
+
+**最快启动方式（仅需一行命令）：**
+
+```bash
+docker-compose up -d
+```
+
+> 💡 **说明**：首次运行会从Docker Hub拉取最新镜像并启动容器，后续运行同样使用：`docker-compose up -d`
 
 ### Docker挂载目录说明
 

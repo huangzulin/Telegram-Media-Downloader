@@ -2,11 +2,8 @@ version: '3.8'
 
 services:
   tmd-app:
-    build: 
-      context: .
-      dockerfile: Dockerfile
+    image: huangzulin/telegram-media-downloader:latest
     container_name: telegram-media-downloader
-    image: telegram-media-downloader:latest
     ports:
       - "3222:3222"
     environment:
