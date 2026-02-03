@@ -107,24 +107,21 @@ docker buildx inspect --bootstrap
 ```
 
 #### 多平台构建命令
-
+Windows:
+```powershell
+docker buildx build `
+  --platform linux/amd64,linux/arm64 `
+  -t huangzulin/telegram-media-downloader:latest `
+  --push .
+```
+Linux:
 ```bash
 # 构建并推送到仓库（需要登录）
 docker buildx build \
   --platform linux/amd64,linux/arm64 \
-  -t your-registry/telegram-media-downloader:latest \
+  -t huangzulin/telegram-media-downloader:latest \
   --push .
 
-# 仅构建不推送
-docker buildx build \
-  --platform linux/amd64,linux/arm64 \
-  -t telegram-media-downloader:latest .
-
-# 构建特定版本
-docker buildx build \
-  --platform linux/amd64,linux/arm64 \
-  -t telegram-media-downloader:v1.0.0 \
-  --push .
 ```
 
 #### 支持的平台架构
