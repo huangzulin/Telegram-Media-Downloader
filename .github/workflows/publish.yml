@@ -102,7 +102,7 @@ jobs:
     - name: Upload Digest
       uses: actions/upload-artifact@v4
       with:
-        name: digests-${{ replace(matrix.platform, '/', '-') }}
+        name: digests-any
         path: /tmp/digests/*
         if-no-files-found: error
         retention-days: 1
