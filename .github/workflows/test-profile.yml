@@ -1,0 +1,86 @@
+name: Test Maven Profile Activation
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ test-profile ]
+
+jobs:
+  test-profiles:
+    name: Test Profile Activation
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout Code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+        
+    - name: Set executable permissions
+      run: |
+        chmod +x ./mvnw
+        chmod +x ./test_profile_activation.sh
+        
+    - name: Setup Java
+      uses: actions/setup-java@v4
+      with:
+        java-version: '21'
+        distribution: 'temurin'
+        cache: 'maven'
+        
+    - name: Test Profile Activation Script
+      run: |
+        echo "=== 运行Profile激活测试脚本 ==="
+        ./test_profile_activation.sh
+        
+    - name: Detailed Maven Analysis
+      run: |
+        echo "=== 详细Maven分析 ==="
+        
+        echo "1. 系统属性检查:"
+        ./mvnw help:system | grep -E "(os\.name|os\.arch|os\.version)"
+        
+        echo "2. Profile详细信息:"
+        ./mvnw help:all-profiles
+        
+        echo "3. 依赖解析测试:"
+        ./mvnw dependency:resolve -P linux-x64
+        
+        echo "4. 构建并检查依赖:"
+        ./mvnw clean compile -P linux-x64 -DskipTests
+        echo "构建完成，检查依赖:"
+        ./mvnw dependency:list | grep tdlight
+        
+    - name: Validate TDLight Integration
+      run: |
+        echo "=== 验证TDLight集成 ==="
+        
+        # 检查是否生成了包含tdlight的JAR
+        if [ -f "target/tmd-1.0.jar" ]; then
+          echo "JAR包大小: $(du -h target/tmd-1.0.jar)"
+          echo "TDLight相关文件:"
+          jar -tf target/tmd-1.0.jar | grep -i tdlight || echo "⚠️  JAR中未找到TDLight文件"
+        else
+          echo "❌ 未找到生成的JAR包"
+        fi
+        
+        # 尝试基本的Java运行测试
+        echo "尝试基本运行测试:"
+        timeout 5s java -cp target/classes it.tdlight.Init 2>&1 || echo "预期的初始化错误（正常）"
+        
+    - name: Create Test Report
+      run: |
+        echo "=== 测试报告 ==="
+        echo "测试时间: $(date)"
+        echo "Runner OS: ${{ runner.os }}"
+        echo "Java Version: $(java -version 2>&1 | head -1)"
+        echo "Maven Version: $(./mvnw --version | head -1)"
+        
+        # 总结结果
+        echo ""
+        echo "📋 测试结论:"
+        if ./mvnw dependency:tree -P linux-x64 | grep -q "tdlight"; then
+          echo "✅ TDLight依赖正确激活"
+        else
+          echo "❌ TDLight依赖未正确激活"
+        fi
