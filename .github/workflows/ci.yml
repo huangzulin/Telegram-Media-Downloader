@@ -25,7 +25,6 @@ jobs:
     - name: Set executable permissions
       run: |
         chmod +x ./mvnw
-        chmod +x .mvn/wrapper/maven-wrapper.jar
         
     - name: Setup Java ${{ matrix.java-version }}
       uses: actions/setup-java@v4
