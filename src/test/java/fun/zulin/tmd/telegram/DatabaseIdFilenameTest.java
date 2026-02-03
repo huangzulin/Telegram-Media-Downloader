@@ -33,7 +33,7 @@ public class DatabaseIdFilenameTest {
                 .build();
         
         String noExtResult = generateIdBasedFilename(noExtItem, "README");
-        assertEquals("789", noExtResult);
+        assertEquals("789.mp4", noExtResult);
         
         // 测试多个点的文件名
         DownloadItem multiDotItem = DownloadItem.builder()

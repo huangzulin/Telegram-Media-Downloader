@@ -1,5 +1,4 @@
 # Telegram Media Downloader
-# Telegram Media Downloader
 
 Telegram媒体文件下载器 - 一个基于Spring Boot 3.2.5和TDLib的高性能媒体下载服务。
 
@@ -50,6 +49,7 @@ docker-compose up -d
 
 ### 2. 环境配置
 
+#### 生产环境配置
 ```bash
 # 创建必要的目录结构
 mkdir -p data downloads/videos downloads/thumbnails downloads/temp logs
@@ -74,10 +74,28 @@ API_HASH=your_actual_api_hash_here
 Test=false
 ```
 
+#### 测试环境配置
+```bash
+# 使用测试配置文件（无需Telegram凭证）
+cp .env.test .env
+
+# 或者手动编辑.env文件
+vim .env
+```
+
+测试环境配置：
+```env
+# 测试模式下可留空
+APP_ID=
+API_HASH=
+Test=true
+```
+
 > ⚠️ **重要提醒**：
 > - `APP_ID` 必须是纯数字，不能包含字母或其他字符
 > - `API_HASH` 是字符串，区分大小写
 > - 可以从 [Telegram API](https://my.telegram.org/) 获取
+> - **测试模式(Test=true)下可以不配置APP_ID和API_HASH**
 
 > 💡 **配置优先级**：应用会优先从项目根目录的 `.env` 文件读取配置，如果文件不存在则回退到系统环境变量。
 

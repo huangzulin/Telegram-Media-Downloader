@@ -74,12 +74,19 @@ public class Tmd {
         var testStr = StrUtil.blankToDefault(props.getProperty("Test"), System.getenv("Test"));
         var test = Boolean.valueOf(StrUtil.emptyToDefault(testStr, "false"));
 
-        // 验证必要配置是否存在
-        if (StrUtil.isBlank(appId)) {
-            throw new IllegalStateException("APP_ID 未配置，请检查.env文件或环境变量");
-        }
-        if (StrUtil.isBlank(apiHash)) {
-            throw new IllegalStateException("API_HASH 未配置，请检查.env文件或环境变量");
+        // 在测试模式下，允许不配置APP_ID和API_HASH
+        if (!test) {
+            // 生产模式下必须配置
+            if (StrUtil.isBlank(appId)) {
+                throw new IllegalStateException("APP_ID 未配置，请检查.env文件或环境变量");
+            }
+            if (StrUtil.isBlank(apiHash)) {
+                throw new IllegalStateException("API_HASH 未配置，请检查.env文件或环境变量");
+            }
+        } else {
+            // 测试模式下使用默认值或跳过Telegram初始化
+            System.out.println("运行在测试模式下，跳过Telegram客户端初始化");
+            return; // 直接返回，不初始化Telegram客户端
         }
         
         // 安全转换APP_ID为Integer
