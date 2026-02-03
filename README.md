@@ -38,7 +38,11 @@ Telegram媒体文件下载器 - 一个基于Spring Boot 3.2.5和TDLib的高性�
 
 ```bash
 # 创建必要的目录结构
-mkdir -p data downloads logs
+mkdir -p data downloads/videos downloads/thumbnails downloads/temp logs
+
+# 设置目录权限（Docker环境下特别重要）
+chmod -R 755 downloads
+chmod 777 downloads/videos downloads/thumbnails downloads/temp
 
 # 复制环境配置文件
 cp .env.example .env
@@ -92,6 +96,40 @@ docker-compose down
 docker-compose down -v --remove-orphans
 ```
 
+### Docker挂载目录说明
+
+本项目支持完整的Docker目录挂载，便于数据持久化和外部访问：
+
+**挂载的目录结构：**
+```
+./data      → /app/data          # 数据库文件
+./downloads → /app/downloads      # 下载文件主目录
+  ├── videos/                     # 视频文件
+  ├── thumbnails/                 # 视频缩略图
+  └── temp/                       # 临时文件
+./logs      → /app/logs          # 应用日志
+./config    → /app/config        # 配置文件（只读）
+```
+
+**权限设置建议：**
+```bash
+# 设置基础权限
+chmod -R 755 downloads
+
+# 设置可写子目录权限
+chmod 777 downloads/videos downloads/thumbnails downloads/temp
+
+# 或者更安全的方式（推荐）
+sudo chown -R $(id -u):$(id -g) downloads
+chmod -R 755 downloads
+chmod 775 downloads/videos downloads/thumbnails downloads/temp
+```
+
+**外部访问下载文件：**
+- 下载的视频可通过 `http://your-server:3222/downloads/videos/filename.mp4` 访问
+- 缩略图可通过 `http://your-server:3222/downloads/thumbnails/filename.jpg` 访问
+- 支持直接在浏览器中播放视频文件
+
 ### 5. Docker Buildx 跨平台编译
 
 本项目支持使用Docker Buildx进行多平台镜像构建，可为不同架构生成优化的镜像。
@@ -109,6 +147,7 @@ docker buildx inspect --bootstrap
 #### 多平台构建命令
 Windows:
 ```powershell
+# 构建并推送到仓库（需要登录）
 docker buildx build `
   --platform linux/amd64,linux/arm64 `
   -t huangzulin/telegram-media-downloader:latest `
@@ -147,6 +186,31 @@ docker run -d \
   -v ./downloads:/app/downloads \
   -v ./logs:/app/logs \
   telegram-media-downloader:arm64
+```
+
+#### 树莓派等ARM设备部署示例
+
+```bash
+# 在ARM设备上构建和运行
+mkdir -p ~/tmd/{data,downloads,logs}
+cd ~/tmd
+git clone https://github.com/your-repo/telegram-media-downloader .
+
+# 构建ARM镜像
+docker buildx build \
+  --platform linux/arm64 \
+  -t tmd-arm64 .
+
+# 运行容器
+docker run -d \
+  --name telegram-media-downloader \
+  -p 3222:3222 \
+  -v $(pwd)/data:/app/data \
+  -v $(pwd)/downloads:/app/downloads \
+  -v $(pwd)/logs:/app/logs \
+  -e APP_ID=your_app_id \
+  -e API_HASH=your_api_hash \
+  tmd-arm64
 ```
 
 #### 使用.dockerignore优化构建

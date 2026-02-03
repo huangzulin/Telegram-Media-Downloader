@@ -40,11 +40,18 @@ RUN ln -sf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
 
 # Create application directories with proper permissions
 WORKDIR /app
-RUN mkdir -p data downloads logs config \
+RUN mkdir -p data downloads/videos downloads/thumbnails downloads/temp logs config \
     && chown -R appuser:appuser /app
+
+# 设置downloads目录权限，确保容器内外都能正常读写
+RUN chmod -R 755 downloads \
+    && chmod 777 downloads/videos downloads/thumbnails downloads/temp
 
 # Copy application artifact
 COPY --from=backend-build --chown=appuser:appuser /build/target/*.jar app.jar
+
+# 创建软链接便于外部访问（可选）
+RUN ln -sf /app/downloads /downloads-shared
 
 # Security hardening
 USER appuser
@@ -66,6 +73,11 @@ ENV JAVA_OPTS="-Xmx512m -Xms256m \
     -XX:+UnlockExperimentalVMOptions \
     -XX:+UseContainerSupport \
     -Xlog:gc*:gc.log:time,tags:filecount=5,filesize=10M"
+
+# 设置下载目录环境变量，支持自定义挂载路径
+ENV DOWNLOAD_DIR=/app/downloads
+ENV VIDEOS_DIR=/app/downloads/videos
+ENV THUMBNAILS_DIR=/app/downloads/thumbnails
 
 # Application entrypoint with signal handling
 ENTRYPOINT ["sh", "-c", "java $JAVA_OPTS -jar app.jar"]

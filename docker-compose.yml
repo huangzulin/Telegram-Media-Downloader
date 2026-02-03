@@ -17,11 +17,16 @@ services:
       - JAVA_OPTS=-Xmx512m -Xms256m -XX:+UseG1GC
       - SERVER_PORT=3222
       - LOGGING_LEVEL_ROOT=INFO
+      - DOWNLOAD_DIR=/app/downloads
+      - DB_PATH=/app/data/tmd.db
     volumes:
       - ./data:/app/data
       - ./downloads:/app/downloads
       - ./logs:/app/logs
       - ./config:/app/config:ro
+      # 可选：挂载单独的子目录以获得更好的性能
+      # - ./downloads/videos:/app/downloads/videos
+      # - ./downloads/thumbnails:/app/downloads/thumbnails
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:3222/actuator/health"]
