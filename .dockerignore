@@ -1,0 +1,54 @@
+# Git相关文件
+.git
+.gitignore
+
+# 文档文件
+README.md
+LICENSE
+*.md
+
+# 环境配置文件
+.env
+.env.example
+
+# 系统文件
+.DS_Store
+Thumbs.db
+
+# 构建输出目录
+target/
+!target/*.jar
+
+# Node.js相关（如果有的话）
+node_modules/
+
+# 测试目录
+temp_test/
+
+# Maven包装器（如果不需要的话）
+.mvn/
+mvnw*
+mvnw.cmd
+
+# IDE配置文件
+.idea/
+.vscode/
+*.iml
+
+# 日志文件
+logs/
+*.log
+
+# 数据目录
+data/
+downloads/
+config/
+
+# Docker相关
+docker-compose.yml
+Dockerfile*
+
+# 临时文件
+tmp/
+temp/
+*.tmp
