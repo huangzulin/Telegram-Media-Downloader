@@ -111,24 +111,32 @@
             <version>0.7.0</version>
         </dependency>
 
-        <!-- tdlight-natives依赖将通过profiles根据平台自动引入 -->
-
+        <!-- tdlight-natives本地jar包依赖 -->
         <dependency>
             <groupId>it.tdlight</groupId>
             <artifactId>tdlight-natives</artifactId>
+            <version>3.4.0+td.1.8.26</version>
             <classifier>windows_amd64</classifier>
+            <scope>system</scope>
+            <systemPath>${project.basedir}/lib/tdlight-natives-windows_amd64.jar</systemPath>
         </dependency>
 
         <dependency>
             <groupId>it.tdlight</groupId>
             <artifactId>tdlight-natives</artifactId>
+            <version>3.4.0+td.1.8.26</version>
             <classifier>linux_arm64_gnu_ssl3</classifier>
+            <scope>system</scope>
+            <systemPath>${project.basedir}/lib/tdlight-natives-linux_arm64_gnu_ssl3.jar</systemPath>
         </dependency>
 
         <dependency>
             <groupId>it.tdlight</groupId>
             <artifactId>tdlight-natives</artifactId>
+            <version>3.4.0+td.1.8.26</version>
             <classifier>linux_amd64_gnu_ssl3</classifier>
+            <scope>system</scope>
+            <systemPath>${project.basedir}/lib/tdlight-natives-linux_amd64_gnu_ssl3.jar</systemPath>
         </dependency>
     </dependencies>
 
