@@ -115,7 +115,7 @@ cd Telegram-Media-Downloader
 
 ```bash
 # 构建镜像
-docker build -t telegram-media-downloader .
+docker build -t huangzulin/telegram-media-downloader .
 
 # 运行
 docker run -p 3222:3222 telegram-media-downloader
