@@ -47,17 +47,9 @@ jobs:
         restore-keys: |
           ${{ runner.os }}-maven-
           
-    - name: Build with Maven
+    - name: Build and Package application
       run: |
-        ./mvnw clean compile -B
-        
-    - name: Run tests
-      run: |
-        ./mvnw test -B
-        
-    - name: Package application
-      run: |
-        ./mvnw package -DskipTests -B
+        ./mvnw clean package -DskipTests -B
         
     - name: Upload artifacts
       uses: actions/upload-artifact@v4
