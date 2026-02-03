@@ -14,7 +14,7 @@ on:
         default: 'latest'
 
 env:
-  IMAGE_NAME: telegram-media-downloader
+  IMAGE_NAME: huangzulin/telegram-media-downloader
   DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
   DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
 
