@@ -1,12 +1,6 @@
 # Telegram Media Downloader
 
 <p align="center">
-  <a href="https://github.com/huangzulin/telegram-media-downloader/actions/workflows/ci.yml">
-    <img src="https://github.com/huangzulin/telegram-media-downloader/actions/workflows/ci.yml/badge.svg" alt="Build Status">
-  </a>
-  <a href="https://github.com/huangzulin/telegram-media-downloader/actions/workflows/publish.yml">
-    <img src="https://github.com/huangzulin/telegram-media-downloader/actions/workflows/publish.yml/badge.svg" alt="Docker Publish">
-  </a>
   <a href="https://hub.docker.com/r/huangzulin/telegram-media-downloader">
     <img src="https://img.shields.io/docker/pulls/huangzulin/telegram-media-downloader?style=flat-square" alt="Docker Pulls">
   </a>
@@ -181,33 +175,6 @@ docker pull ghcr.io/OWNER/REPO:v1.0.0
 docker-compose up -d
 ```
 
-## 🛠️ 配置选项
-
-### application.yml 主要配置
-
-```yaml
-# 服务器配置
-server:
-  port: 3222
-
-# 下载配置
-tmd:
-  download:
-    max-concurrent: 3           # 最大并发下载数
-    timeout-minutes: 30         # 下载超时时间
-    retry-count: 3             # 重试次数
-  storage:
-    download-dir: downloads    # 下载目录
-    data-dir: data            # 数据目录
-    max-storage-size: 10GB    # 最大存储空间
-
-# 数据库配置
-spring:
-  datasource:
-    hikari:
-      maximum-pool-size: 5     # 连接池大小
-```
-
 ## 📈 监控和运维
 
 ### 健康检查端点
@@ -321,6 +288,55 @@ mvn help:active-profiles
 mvn clean package -P windows-x64
 ```
 
+### Docker Buildx 多平台构建
+
+本项目支持使用Docker Buildx进行多平台镜像构建：
+
+**启用Buildx并创建构建器：**
+```bash
+# 启用buildx插件
+docker buildx create --name mybuilder --use
+
+# 验证可用平台
+docker buildx inspect --bootstrap
+```
+
+**多平台构建命令：**
+```bash
+# 构建并推送到Docker Hub（需要登录）
+docker buildx build \
+  --platform linux/amd64,linux/arm64 \
+  -t huangzulin/telegram-media-downloader:latest \
+  --push .
+
+# 本地构建单平台镜像
+docker buildx build \
+  --platform linux/amd64 \
+  -t telegram-media-downloader:local \
+  --load .
+```
+
+**指定Maven Profile构建：**
+```bash
+# 为ARM64平台构建
+docker buildx build \
+  --platform linux/arm64 \
+  --build-arg MAVEN_PROFILE=linux-arm64 \
+  -t telegram-media-downloader:arm64 \
+  --load .
+```
+
+**构建缓存优化：**
+```bash
+# 启用构建缓存
+docker buildx build \
+  --platform linux/amd64,linux/arm64 \
+  --cache-from type=local,src=/tmp/buildx-cache \
+  --cache-to type=local,dest=/tmp/buildx-cache-new \
+  -t telegram-media-downloader:latest \
+  --push .
+```
+
 ## 🤝 贡献
 
 欢迎提交Issue和Pull Request！
@@ -343,32 +359,6 @@ MIT License - 详见 [LICENSE](LICENSE) 文件
 - [Hutool](https://hutool.cn/) - Java工具库
 
 ---
-## 🤖 自动化功能
-
-本项目配备了完整的GitHub Actions自动化工作流：
-
-### 🔄 持续集成 (CI)
-- **多平台测试**: Ubuntu、Windows 平台并行构建测试
-- **代码质量检查**: 自动化单元测试和静态代码分析
-- **Docker构建验证**: 每次提交都会验证Docker镜像构建
-- **安全扫描**: 自动进行容器安全漏洞扫描
-
-### 🐳 Docker镜像发布
-- **多架构支持**: 自动构建linux/amd64和linux/arm64镜像
-- **版本管理**: Git标签触发自动发布到Docker Hub
-- **镜像优化**: 多阶段构建，最小化镜像体积
-- **安全加固**: 非root用户运行，安全配置最佳实践
-
-### 📦 版本发布
-- **自动发布**: Git标签推送自动创建GitHub Release
-- **变更日志**: 自动生成版本变更记录
-- **资产上传**: 自动上传可执行JAR文件
-- **通知机制**: 可配置Discord等通知渠道
-
-### 🛠️ 开发者工具
-- **Issue模板**: 标准化的Bug报告和功能请求模板
-- **贡献指南**: 详细的开发者贡献流程
-- **跨平台兼容**: `.gitattributes`确保不同平台代码一致性
 
 ## 🤝 贡献
 
