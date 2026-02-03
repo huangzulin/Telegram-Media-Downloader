@@ -65,9 +65,7 @@ ENV JAVA_OPTS="-Xmx512m -Xms256m \
     -XX:MaxGCPauseMillis=200 \
     -XX:+UnlockExperimentalVMOptions \
     -XX:+UseContainerSupport \
-    -XX:+PrintGCDetails \
-    -XX:+PrintGCTimeStamps \
-    -Xloggc:/app/logs/gc.log \
+    -Xlog:gc*:gc.log:time,tags:filecount=5,filesize=10M \
     -XX:+UseGCLogFileRotation \
     -XX:NumberOfGCLogFiles=5 \
     -XX:GCLogFileSize=10M"
