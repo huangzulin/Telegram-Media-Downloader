@@ -1,0 +1,4 @@
+# Ensure executable permissions are preserved for shell scripts
+*.sh text eol=lf
+mvnw text eol=lf
+*/mvnw text eol=lf

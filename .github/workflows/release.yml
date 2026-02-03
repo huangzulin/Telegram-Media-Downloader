@@ -24,6 +24,11 @@ jobs:
         chmod +x ./mvnw
         ls -la ./mvnw
         
+    - name: Create required directories
+      run: |
+        mkdir -p data downloads logs
+        ls -la
+        
     - name: Extract tag information
       id: tag_info
       run: |

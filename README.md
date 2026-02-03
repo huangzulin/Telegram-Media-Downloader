@@ -41,6 +41,16 @@ Telegram媒体文件下载器 - 一个基于Spring Boot 3.2.5和TDLib的高性�
 ### 2. 环境配置
 
 ```bash
+# 使用脚本自动创建目录结构
+# Linux/macOS:
+./setup-directories.sh
+
+# Windows:
+setup-directories.bat
+
+# 或手动创建目录
+mkdir -p data downloads logs
+
 # 复制环境配置文件
 cp .env.example .env
 

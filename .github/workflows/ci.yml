@@ -27,6 +27,11 @@ jobs:
         chmod +x ./mvnw
         ls -la ./mvnw
       
+    - name: Create required directories
+      run: |
+        mkdir -p data downloads logs
+        ls -la
+      
     - name: Set up JDK ${{ matrix.java-version }}
       uses: actions/setup-java@v4
       with:
