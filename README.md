@@ -1,257 +1,103 @@
 # Telegram Media Downloader
 
-Telegram媒体文件下载器 - 一个基于Spring Boot 3.2.5和TDLib的高性能媒体下载服务。
+<p align="center">
+  <a href="https://github.com/huangzulin/telegram-media-downloader/actions/workflows/ci.yml">
+    <img src="https://github.com/huangzulin/telegram-media-downloader/actions/workflows/ci.yml/badge.svg" alt="Build Status">
+  </a>
+  <a href="https://github.com/huangzulin/telegram-media-downloader/actions/workflows/publish.yml">
+    <img src="https://github.com/huangzulin/telegram-media-downloader/actions/workflows/publish.yml/badge.svg" alt="Docker Publish">
+  </a>
+  <a href="https://hub.docker.com/r/huangzulin/telegram-media-downloader">
+    <img src="https://img.shields.io/docker/pulls/huangzulin/telegram-media-downloader?style=flat-square" alt="Docker Pulls">
+  </a>
+  <a href="https://github.com/huangzulin/telegram-media-downloader/blob/main/LICENSE">
+    <img src="https://img.shields.io/github/license/huangzulin/telegram-media-downloader?style=flat-square" alt="License">
+  </a>
+</p>
 
-> 🚀 **自动化CI/CD**: 本项目采用完整的GitHub Actions自动化流程，支持多平台构建、Docker镜像发布和自动版本管理。
+Telegram媒体文件下载器 - 一个基于Spring Boot 3.2.5和TDLib的高性能媒体下载服务，专为个人和小团队设计的现代化解决方案。
 
-## 🚀 一行命令快速启动
+> 🚀 **一行命令部署** | 🐳 **Docker支持** | 🔄 **自动更新** | 🛡️ **企业级安全** | 📱 **Web界面**
 
+## 🌟 核心特性
+
+- **⚡ 高性能下载**: 多线程并发下载，智能流量控制，最大支持3个并发任务
+- **📡 实时监控**: WebSocket实时推送下载进度、状态变化和系统信息
+- **📱 现代化界面**: 响应式Web界面，支持移动端访问，实时数据显示
+- **🔧 完善监控**: Spring Boot Actuator + Prometheus指标体系，健康检查端点
+- **📦 容器化部署**: Docker一键部署，支持多平台架构（amd64/arm64）
+- **🔄 自动化运维**: GitHub Actions CI/CD全流程，自动构建和发布
+- **🛡️ 安全可靠**: 非root用户运行，资源限制，安全的文件处理机制
+- **💾 智能存储**: SQLite数据库持久化，自动清理过期文件，支持10GB存储空间
+
+
+
+## 🚀 快速开始
+
+### 📋 前置条件
+
+**系统要求**
+- **Java**: OpenJDK 21+ (推荐Eclipse Temurin)
+- **容器化**: Docker 20.10+ 或 Docker Compose 1.29+
+- **操作系统**: Linux/Windows/macOS
+- **存储空间**: 建议10GB+可用空间
+- **网络**: 能够访问Telegram服务器
+
+**获取Telegram API凭证**
+1. 访问 [Telegram API](https://my.telegram.org/auth) 官网
+2. 登录并创建新应用
+3. 获取 `APP_ID` 和 `API_HASH` 凭证
+
+> ⚠️ **重要提醒**: 请妥善保管您的API凭证，不要提交到版本控制系统
+
+### 🚀 部署方式
+
+#### 🐳 Docker Compose部署 (推荐)
 ```bash
-# 克隆项目 → 配置API → 一行启动
-git clone https://github.com/your-repo/telegram-media-downloader.git
+# 克隆项目
+git clone https://github.com/huangzulin/telegram-media-downloader.git
 cd telegram-media-downloader
-cp .env.example .env  # 编辑填入Telegram API凭证
-docker-compose up -d
-```
 
-> 🎯 **访问地址**: http://localhost:3222 - 立即开始使用！
-
----
-
-[![Build Status](https://github.com/OWNER/REPO/actions/workflows/ci.yml/badge.svg)](https://github.com/OWNER/REPO/actions)
-[![Docker Publish](https://github.com/OWNER/REPO/actions/workflows/publish.yml/badge.svg)](https://github.com/OWNER/REPO/actions)
-[![Release](https://github.com/OWNER/REPO/actions/workflows/release.yml/badge.svg)](https://github.com/OWNER/REPO/actions)
-[![License](https://img.shields.io/github/license/OWNER/REPO)](LICENSE)
-
-## 🚀 核心特性
-
-- **高性能并发下载**: 支持多线程并发下载，智能流量控制
-- **实时进度追踪**: WebSocket实时推送下载状态和进度
-- **完善监控体系**: 内置Actuator监控和Prometheus指标
-- **企业级部署**: Docker容器化，支持Kubernetes编排
-- **优雅生命周期**: 支持平滑重启和资源自动清理
-- **安全可靠**: 非root用户运行，安全加固配置
-- **自动化部署**: 完整的CI/CD流水线，支持多平台Docker镜像构建
-
-## 📋 系统要求
-
-### 运行环境
-- **Java**: OpenJDK 21+ (推荐Temurin发行版)
-- **构建工具**: Maven 3.9+
-- **容器化**: Docker 20.10+ (可选)
-- **操作系统**: Linux/Windows
-
-### 依赖服务
-- **Telegram API**: 需要有效的APP_ID和API_HASH
-- **存储空间**: 建议至少10GB可用空间
-
-## 🔧 快速开始
-
-### 1. 获取Telegram API凭证
-
-访问 [Telegram API](https://my.telegram.org/) 获取您的：
-- `APP_ID`
-- `API_HASH`
-
-### 2. 环境配置
-
-#### 生产环境配置
-```bash
-# 创建必要的目录结构
-mkdir -p data downloads/videos downloads/thumbnails downloads/temp logs
-
-# 设置目录权限（Docker环境下特别重要）
-chmod -R 755 downloads
-chmod 777 downloads/videos downloads/thumbnails downloads/temp
-
-# 复制环境配置文件
+# 配置环境变量
 cp .env.example .env
+# 编辑 .env 文件，填入您的 Telegram API 凭证
 
-# 编辑配置文件
-vim .env
+# 创建必要目录
+mkdir -p data downloads/{videos,thumbnails,temp} logs
+
+# 启动服务
+docker-compose up -d
+
+# 验证服务状态
+docker-compose ps
+
+# 查看日志
+docker-compose logs -f
 ```
 
-在 `.env` 文件中填入您的Telegram API凭证：
+**访问应用**: 浏览器打开 [http://localhost:3222](http://localhost:3222)
 
-```env
-# 注意：APP_ID必须是纯数字
-APP_ID=12345678
-API_HASH=your_actual_api_hash_here
-Test=false
-```
-
-#### 测试环境配置
+#### ☕ 本地Java运行
 ```bash
-# 使用测试配置文件（无需Telegram凭证）
-cp .env.test .env
-
-# 或者手动编辑.env文件
-vim .env
-```
-
-测试环境配置：
-```env
-# 测试模式下可留空
-APP_ID=
-API_HASH=
-Test=true
-```
-
-> ⚠️ **重要提醒**：
-> - `APP_ID` 必须是纯数字，不能包含字母或其他字符
-> - `API_HASH` 是字符串，区分大小写
-> - 可以从 [Telegram API](https://my.telegram.org/) 获取
-> - **测试模式(Test=true)下可以不配置APP_ID和API_HASH**
-
-> 💡 **配置优先级**：应用会优先从项目根目录的 `.env` 文件读取配置，如果文件不存在则回退到系统环境变量。
-
-### 3. 本地运行
-
-```bash
-# 编译项目（自动根据平台引入对应依赖）
-./mvnw.cmd clean package -DskipTests
+# 编译项目 (自动检测平台并引入对应依赖)
+./mvnw clean package -DskipTests
 
 # 运行应用
 java -jar target/tmd-1.0.jar
+
+# 或使用Maven直接运行
+./mvnw spring-boot:run
 ```
 
-> 💡 **平台适配说明**：项目使用Maven Profiles自动检测运行平台并引入对应的TDLib原生库依赖，支持Windows、Linux。
+> 💡 **提示**: 项目会自动检测运行平台并引入相应的TDLib原生库依赖
 
-### 4. Docker一键部署
-
+#### 🚀 直接使用预构建镜像
 ```bash
-# 一行命令启动（从Docker Hub拉取镜像）
-docker-compose up -d
-
-# 查看运行状态
-docker-compose ps
-
-# 查看实时日志
-docker-compose logs -f
-
-# 停止服务
-docker-compose down
-
-# 完全清理（包括数据卷）
-docker-compose down -v --remove-orphans
-```
-
-### 🚀 超级简化部署
-
-**最快启动方式（仅需一行命令）：**
-
-```bash
-docker-compose up -d
-```
-
-> 💡 **说明**：首次运行会从Docker Hub拉取最新镜像并启动容器，后续运行同样使用：`docker-compose up -d`
-
-### Docker挂载目录说明
-
-本项目支持完整的Docker目录挂载，便于数据持久化和外部访问：
-
-**挂载的目录结构：**
-```
-./data      → /app/data          # 数据库文件
-./downloads → /app/downloads      # 下载文件主目录
-  ├── videos/                     # 视频文件
-  ├── thumbnails/                 # 视频缩略图
-  └── temp/                       # 临时文件
-./logs      → /app/logs          # 应用日志
-./config    → /app/config        # 配置文件（只读）
-```
-
-**权限设置建议：**
-```bash
-# 设置基础权限
-chmod -R 755 downloads
-
-# 设置可写子目录权限
-chmod 777 downloads/videos downloads/thumbnails downloads/temp
-
-# 或者更安全的方式（推荐）
-sudo chown -R $(id -u):$(id -g) downloads
-chmod -R 755 downloads
-chmod 775 downloads/videos downloads/thumbnails downloads/temp
-```
-
-**外部访问下载文件：**
-- 下载的视频可通过 `http://your-server:3222/downloads/videos/filename.mp4` 访问
-- 缩略图可通过 `http://your-server:3222/downloads/thumbnails/filename.jpg` 访问
-- 支持直接在浏览器中播放视频文件
-
-### 5. Docker Buildx 跨平台编译
-
-本项目支持使用Docker Buildx进行多平台镜像构建，可为不同架构生成优化的镜像。
-
-#### 启用Buildx
-
-```bash
-# 启用buildx插件
-docker buildx create --name mybuilder --use
-
-# 验证可用平台
-docker buildx inspect --bootstrap
-```
-
-#### 多平台构建命令
-Windows:
-```powershell
-# 构建并推送到仓库（需要登录）
-docker buildx build `
-  --platform linux/amd64,linux/arm64 `
-  -t huangzulin/telegram-media-downloader:latest `
-  --push .
-```
-Linux:
-```bash
-# 构建并推送到仓库（需要登录）
-docker buildx build \
-  --platform linux/amd64,linux/arm64 \
-  -t huangzulin/telegram-media-downloader:latest \
-  --push .
-
-```
-
-#### 支持的平台架构
-
-- `linux/amd64` - x86_64架构（Intel/AMD 64位）
-- `linux/arm64` - ARM64架构（树莓派、Apple Silicon等）
-- `linux/arm/v7` - ARM32架构（较老的ARM设备）
-
-#### 本地加载特定平台镜像
-
-```bash
-# 构建并加载到本地（单平台）
-docker buildx build \
-  --platform linux/arm64 \
-  -t telegram-media-downloader:arm64 \
-  --load .
-
-# 在ARM设备上运行
-docker run -d \
-  --name tmd-arm64 \
-  -p 3222:3222 \
-  -v ./data:/app/data \
-  -v ./downloads:/app/downloads \
-  -v ./logs:/app/logs \
-  telegram-media-downloader:arm64
-```
-
-#### 树莓派等ARM设备部署示例
-
-```bash
-# 在ARM设备上构建和运行
+# 创建工作目录
 mkdir -p ~/tmd/{data,downloads,logs}
 cd ~/tmd
-git clone https://github.com/your-repo/telegram-media-downloader .
 
-# 构建ARM镜像
-docker buildx build \
-  --platform linux/arm64 \
-  -t tmd-arm64 .
-
-# 运行容器
+# 直接运行 (无需克隆代码)
 docker run -d \
   --name telegram-media-downloader \
   -p 3222:3222 \
@@ -260,45 +106,42 @@ docker run -d \
   -v $(pwd)/logs:/app/logs \
   -e APP_ID=your_app_id \
   -e API_HASH=your_api_hash \
-  tmd-arm64
+  -e TZ=Asia/Shanghai \
+  --restart unless-stopped \
+  huangzulin/telegram-media-downloader:latest
 ```
 
-#### 使用.dockerignore优化构建
+> 📦 **镜像支持**: Linux amd64/arm64 架构，自动适配不同平台
 
-创建 `.dockerignore` 文件以减少构建上下文：
+## 📁 目录结构
 
-```dockerignore
-.git
-.gitignore
-README.md
-LICENSE
-*.md
-.env
-.env.example
-.DS_Store
-Thumbs.db
-target/
-!target/*.jar
-node_modules/
-temp_test/
-.mvn/
-mvnw*
+```
+.
+├── data/              # SQLite数据库文件
+├── downloads/         # 下载文件主目录
+│   ├── videos/        # 视频文件
+│   ├── thumbnails/    # 视频缩略图
+│   └── temp/          # 临时文件
+├── logs/              # 应用日志文件
+├── config/            # 配置文件（只读）
+└── target/            # 编译输出目录
 ```
 
-#### 构建缓存优化
-
+### 权限设置
 ```bash
-# 启用构建缓存
-docker buildx build \
-  --platform linux/amd64,linux/arm64 \
-  --cache-from type=local,src=/tmp/buildx-cache \
-  --cache-to type=local,dest=/tmp/buildx-cache-new \
-  -t telegram-media-downloader:latest .
+# 创建目录结构
+mkdir -p data downloads/{videos,thumbnails,temp} logs config
 
-# 移动缓存目录
-rm -rf /tmp/buildx-cache
-mv /tmp/buildx-cache-new /tmp/buildx-cache
+# 设置适当权限
+chmod -R 755 downloads
+chmod 777 downloads/{videos,thumbnails,temp}
 ```
+
+### 文件访问
+- **视频文件**: `http://localhost:3222/downloads/videos/filename.mp4`
+- **缩略图**: `http://localhost:3222/downloads/thumbnails/filename.jpg`
+- **健康检查**: `http://localhost:3222/actuator/health`
+- **API文档**: `http://localhost:3222/swagger-ui.html`
 
 ## 📊 API接口
 
