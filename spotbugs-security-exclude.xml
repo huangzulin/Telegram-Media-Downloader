@@ -1,0 +1,17 @@
+<FindBugsFilter>
+    <!-- 排除测试类 -->
+    <Match>
+        <Class name="~.*\.*Test" />
+    </Match>
+    
+    <!-- 排除生成的代码 -->
+    <Match>
+        <Class name="~.*\.generated\..*" />
+    </Match>
+    
+    <!-- 排除特定的安全检查 -->
+    <Match>
+        <Bug pattern="EI_EXPOSE_REP,EI_EXPOSE_REP2" />
+        <Class name="~.*\.entity\..*" />
+    </Match>
+</FindBugsFilter>

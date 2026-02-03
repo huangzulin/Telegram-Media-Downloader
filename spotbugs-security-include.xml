@@ -1,0 +1,16 @@
+<FindBugsFilter>
+    <!-- 包含安全相关的检查 -->
+    <Match>
+        <Bug category="SECURITY" />
+    </Match>
+    
+    <!-- 包含SQL注入相关检查 -->
+    <Match>
+        <Bug pattern="SQL_INJECTION_JPA,SQL_INJECTION_JDBC" />
+    </Match>
+    
+    <!-- 包含XSS相关检查 -->
+    <Match>
+        <Bug pattern="XSS_REQUEST_PARAMETER_TO_SEND_ERROR,XSS_REQUEST_PARAMETER_TO_SERVLET_WRITER" />
+    </Match>
+</FindBugsFilter>

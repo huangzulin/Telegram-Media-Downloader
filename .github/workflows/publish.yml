@@ -3,6 +3,12 @@ name: Publish Docker Image
 on:
   push:
     tags: [ 'v*.*.*' ]
+    branches: [ main ]
+    paths:
+      - 'src/**'
+      - 'pom.xml'
+      - 'Dockerfile'
+      - '.github/workflows/publish.yml'
   workflow_dispatch:
 
 env:

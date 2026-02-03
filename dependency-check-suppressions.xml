@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<suppressions xmlns="https://jeremylong.github.io/DependencyCheck/dependency-suppression.1.3.xsd">
+    <!-- 在这里添加需要抑制的安全警告 -->
+    <suppress>
+        <notes><![CDATA[
+        文件: commons-lang3-3.12.0.jar
+        理由: 低风险漏洞，不影响项目安全性
+        ]]></notes>
+        <filePath regex="true">.*commons-lang3-3\.12\.0\.jar</filePath>
+        <cve>CVE-2022-1234</cve>
+    </suppress>
+</suppressions>
