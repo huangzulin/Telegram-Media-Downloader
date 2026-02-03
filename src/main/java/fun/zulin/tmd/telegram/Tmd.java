@@ -74,7 +74,21 @@ public class Tmd {
         var testStr = StrUtil.blankToDefault(props.getProperty("Test"), System.getenv("Test"));
         var test = Boolean.valueOf(StrUtil.emptyToDefault(testStr, "false"));
 
-        APIToken apiToken = new APIToken(Convert.toInt(appId), apiHash);
+        // 验证必要配置是否存在
+        if (StrUtil.isBlank(appId)) {
+            throw new IllegalStateException("APP_ID 未配置，请检查.env文件或环境变量");
+        }
+        if (StrUtil.isBlank(apiHash)) {
+            throw new IllegalStateException("API_HASH 未配置，请检查.env文件或环境变量");
+        }
+        
+        // 安全转换APP_ID为Integer
+        Integer appIdInt = Convert.toInt(appId);
+        if (appIdInt == null) {
+            throw new IllegalStateException("APP_ID 格式错误，必须是数字: " + appId);
+        }
+
+        APIToken apiToken = new APIToken(appIdInt, apiHash);
         TDLibSettings settings = TDLibSettings.create(apiToken);
 
         var dataPath = Paths.get("data");

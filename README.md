@@ -61,9 +61,16 @@ vim .env
 在 `.env` 文件中填入您的Telegram API凭证：
 
 ```env
-APP_ID=your_app_id_here
-API_HASH=your_api_hash_here
+# 注意：APP_ID必须是纯数字
+APP_ID=12345678
+API_HASH=your_actual_api_hash_here
+Test=false
 ```
+
+> ⚠️ **重要提醒**：
+> - `APP_ID` 必须是纯数字，不能包含字母或其他字符
+> - `API_HASH` 是字符串，区分大小写
+> - 可以从 [Telegram API](https://my.telegram.org/) 获取
 
 > 💡 **配置优先级**：应用会优先从项目根目录的 `.env` 文件读取配置，如果文件不存在则回退到系统环境变量。
 
