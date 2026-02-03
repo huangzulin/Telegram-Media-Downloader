@@ -38,3 +38,4 @@ build/
 /logs/tmd.log
 /.env
 /logs/
+/.mvn/wrapper/maven-wrapper.jar

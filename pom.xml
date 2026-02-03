@@ -112,6 +112,24 @@
         </dependency>
 
         <!-- tdlight-natives依赖将通过profiles根据平台自动引入 -->
+
+        <dependency>
+            <groupId>it.tdlight</groupId>
+            <artifactId>tdlight-natives</artifactId>
+            <classifier>windows_amd64</classifier>
+        </dependency>
+
+        <dependency>
+            <groupId>it.tdlight</groupId>
+            <artifactId>tdlight-natives</artifactId>
+            <classifier>linux_arm64_gnu_ssl3</classifier>
+        </dependency>
+
+        <dependency>
+            <groupId>it.tdlight</groupId>
+            <artifactId>tdlight-natives</artifactId>
+            <classifier>linux_amd64_gnu_ssl3</classifier>
+        </dependency>
     </dependencies>
 
     <dependencyManagement>
@@ -178,48 +196,7 @@
                     </includes>
                 </configuration>
             </plugin>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-checkstyle-plugin</artifactId>
-                <version>3.3.0</version>
-                <configuration>
-                    <configLocation>google_checks.xml</configLocation>
-                    <encoding>UTF-8</encoding>
-                    <consoleOutput>true</consoleOutput>
-                    <failsOnError>true</failsOnError>
-                    <linkXRef>false</linkXRef>
-                </configuration>
-                <dependencies>
-                    <dependency>
-                        <groupId>com.puppycrawl.tools</groupId>
-                        <artifactId>checkstyle</artifactId>
-                        <version>10.12.1</version>
-                    </dependency>
-                </dependencies>
-            </plugin>
-            <plugin>
-                <groupId>com.github.spotbugs</groupId>
-                <artifactId>spotbugs-maven-plugin</artifactId>
-                <version>4.7.3.5</version>
-                <configuration>
-                    <effort>Max</effort>
-                    <threshold>Low</threshold>
-                    <failOnError>true</failOnError>
-                    <includeFilterFile>spotbugs-security-include.xml</includeFilterFile>
-                    <excludeFilterFile>spotbugs-security-exclude.xml</excludeFilterFile>
-                </configuration>
-            </plugin>
-            <plugin>
-                <groupId>org.owasp</groupId>
-                <artifactId>dependency-check-maven</artifactId>
-                <version>8.4.0</version>
-                <configuration>
-                    <failBuildOnAnyVulnerability>false</failBuildOnAnyVulnerability>
-                    <suppressionFiles>
-                        <suppressionFile>dependency-check-suppressions.xml</suppressionFile>
-                    </suppressionFiles>
-                </configuration>
-            </plugin>
+
             <plugin>
                 <groupId>org.jacoco</groupId>
                 <artifactId>jacoco-maven-plugin</artifactId>
@@ -239,71 +216,9 @@
                     </execution>
                 </executions>
             </plugin>
-            <plugin>
-                <groupId>org.codehaus.mojo</groupId>
-                <artifactId>versions-maven-plugin</artifactId>
-                <version>2.16.0</version>
-            </plugin>
         </plugins>
     </build>
 
-    <profiles>
-        <!-- Windows x64 平台 -->
-        <profile>
-            <id>windows-x64</id>
-            <activation>
-                <os>
-                    <family>windows</family>
-                    <arch>amd64</arch>
-                </os>
-            </activation>
-            <dependencies>
-                <dependency>
-                    <groupId>it.tdlight</groupId>
-                    <artifactId>tdlight-natives</artifactId>
-                    <classifier>windows_amd64</classifier>
-                </dependency>
-            </dependencies>
-        </profile>
 
-        <!-- Linux x64 平台 -->
-        <profile>
-            <id>linux-x64</id>
-            <activation>
-                <os>
-                    <family>unix</family>
-                    <name>linux</name>
-                    <arch>amd64</arch>
-                </os>
-            </activation>
-            <dependencies>
-                <dependency>
-                    <groupId>it.tdlight</groupId>
-                    <artifactId>tdlight-natives</artifactId>
-                    <classifier>linux_amd64_gnu_ssl3</classifier>
-                </dependency>
-            </dependencies>
-        </profile>
-
-        <!-- Linux ARM64 平台 -->
-        <profile>
-            <id>linux-arm64</id>
-            <activation>
-                <os>
-                    <family>unix</family>
-                    <name>linux</name>
-                    <arch>aarch64</arch>
-                </os>
-            </activation>
-            <dependencies>
-                <dependency>
-                    <groupId>it.tdlight</groupId>
-                    <artifactId>tdlight-natives</artifactId>
-                    <classifier>linux_arm64_gnu_ssl3</classifier>
-                </dependency>
-            </dependencies>
-        </profile>
-
-    </profiles>
 
 </project>

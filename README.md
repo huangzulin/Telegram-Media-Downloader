@@ -5,7 +5,7 @@
 [![CI Build](https://github.com/zulinfun/Telegram-Media-Downloader/actions/workflows/ci.yml/badge.svg)](https://github.com/zulinfun/Telegram-Media-Downloader/actions/workflows/ci.yml)
 [![Publish Docker](https://github.com/zulinfun/Telegram-Media-Downloader/actions/workflows/publish.yml/badge.svg)](https://github.com/zulinfun/Telegram-Media-Downloader/actions/workflows/publish.yml)
 [![Docker Pulls](https://img.shields.io/docker/pulls/zulinfun/telegram-media-downloader)](https://hub.docker.com/r/zulinfun/telegram-media-downloader)
-[![License](https://img.shields.io/github/license/yourusername/Telegram-Media-Downloader)](LICENSE)
+[![License](https://img.shields.io/github/license/zulinfun/Telegram-Media-Downloader)](LICENSE)
 
 ## 特性
 
@@ -63,6 +63,36 @@ services:
 | DOWNLOAD_DIR | /app/downloads | 下载目录 |
 | VIDEOS_DIR | /app/downloads/videos | 视频存储目录 |
 | THUMBNAILS_DIR | /app/downloads/thumbnails | 缩略图目录 |
+| APP_ID | 无 | Telegram API App ID (必需) |
+| APP_HASH | 无 | Telegram API App Hash (必需) |
+
+### Telegram API 凭据配置
+
+在首次使用前，您需要获取Telegram API凭据：
+
+1. 访问 [Telegram API开发者页面](https://my.telegram.org/auth)
+2. 登录您的Telegram账户
+3. 创建新的应用程序获取 `app_id` 和 `app_hash`
+4. 将凭据通过环境变量传递给应用：
+
+```bash
+# Docker运行时
+docker run -d \
+  --name telegram-downloader \
+  -p 3222:3222 \
+  -e APP_ID=your_app_id \
+  -e APP_HASH=your_app_hash \
+  -v ./downloads:/app/downloads \
+  zulinfun/telegram-media-downloader:latest
+
+# Docker Compose
+environment:
+  - APP_ID=your_app_id
+  - APP_HASH=your_app_hash
+  - TZ=Asia/Shanghai
+```
+
+**注意**: `APP_ID` 和 `APP_HASH` 是使用Telegram API的必需凭据，请妥善保管。
 
 ## 访问应用
 
