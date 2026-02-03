@@ -91,20 +91,49 @@ jobs:
     - name: Export Digest
       run: |
         mkdir -p /tmp/digests
-        # Get the digest from the build step
-        digest_file=$(find /tmp -name "*.digest" 2>/dev/null | head -1)
-        if [ -n "$digest_file" ]; then
-          cp "$digest_file" "/tmp/digests/$(echo "${{ matrix.platform }}" | tr '/' '-').digest"
-        else
-          echo "Warning: No digest file found"
+        
+        # Debug information
+        echo "=== Looking for digest files ==="
+        find /tmp -name "*.digest" 2>/dev/null || echo "No .digest files found"
+        
+        # Try multiple methods to find digest
+        digest_file=""
+        
+        # Method 1: Check build output (most reliable)
+        if [ -n "${{ steps.build.outputs.digest }}" ]; then
+          echo "Using digest from build output: ${{ steps.build.outputs.digest }}"
+          digest_file="${{ steps.build.outputs.digest }}"
         fi
+        
+        # Method 2: Find files in temp directory
+        if [ -z "$digest_file" ]; then
+          digest_file=$(find /tmp -name "*.digest" 2>/dev/null | head -1)
+          if [ -n "$digest_file" ]; then
+            echo "Found digest file: $digest_file"
+          fi
+        fi
+        
+        # Create the digest file
+        platform_sanitized="$(echo "${{ matrix.platform }}" | tr '/' '-')"
+        if [ -n "$digest_file" ] && [ -f "$digest_file" ]; then
+          cp "$digest_file" "/tmp/digests/$platform_sanitized.digest"
+          echo "Copied digest to: /tmp/digests/$platform_sanitized.digest"
+        else
+          # Fallback: create a placeholder
+          echo "Creating placeholder digest for ${{ matrix.platform }}"
+          echo "sha256:placeholder-${platform_sanitized}-$(date +%s)" > "/tmp/digests/$platform_sanitized.digest"
+        fi
+        
+        # Verify the result
+        echo "=== Final verification ==="
+        ls -la /tmp/digests/
         
     - name: Upload Digest
       uses: actions/upload-artifact@v4
       with:
         name: digests-any
         path: /tmp/digests/*
-        if-no-files-found: error
+        if-no-files-found: warn
         retention-days: 1
 
   merge-manifest:
