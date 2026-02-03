@@ -78,6 +78,7 @@ jobs:
           type=sha,prefix=sha-,format=short
           
     - name: Build and Push Platform Image
+      id: build
       uses: docker/build-push-action@v5
       with:
         context: .
@@ -90,14 +91,18 @@ jobs:
     - name: Export Digest
       run: |
         mkdir -p /tmp/digests
-        digest="${{ steps.dockernames.outputs.digest }}"
-        platform_name=$(echo "${{ matrix.platform }}" | tr '/' '-')
-        echo "$digest" > "/tmp/digests/$platform_name.digest"
+        # Get the digest from the build step
+        digest_file=$(find /tmp -name "*.digest" 2>/dev/null | head -1)
+        if [ -n "$digest_file" ]; then
+          cp "$digest_file" "/tmp/digests/$(echo "${{ matrix.platform }}" | tr '/' '-').digest"
+        else
+          echo "Warning: No digest file found"
+        fi
         
     - name: Upload Digest
       uses: actions/upload-artifact@v4
       with:
-        name: digests-${{ matrix.platform }}
+        name: digests-${{ replace(matrix.platform, '/', '-') }}
         path: /tmp/digests/*
         if-no-files-found: error
         retention-days: 1
