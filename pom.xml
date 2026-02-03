@@ -92,6 +92,9 @@
         <dependency>
             <groupId>it.tdlight</groupId>
             <artifactId>tdlight-java</artifactId>
+            <version>3.4.0+td.1.8.26</version>
+            <scope>system</scope>
+            <systemPath>${project.basedir}/lib/tdlight-java-3.4.0+td.1.8.26.jar</systemPath>
         </dependency>
         <dependency>
             <groupId>com.google.zxing</groupId>
