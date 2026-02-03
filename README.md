@@ -1,6 +1,13 @@
 # Telegram Media Downloader
+# Telegram Media Downloader
 
 Telegram媒体文件下载器 - 一个基于Spring Boot 3.2.5和TDLib的高性能媒体下载服务。
+
+[![CI/CD Pipeline](https://github.com/OWNER/REPO/actions/workflows/ci.yml/badge.svg)](https://github.com/OWNER/REPO/actions/workflows/ci.yml)
+[![Publish Docker Images](https://github.com/OWNER/REPO/actions/workflows/publish.yml/badge.svg)](https://github.com/OWNER/REPO/actions/workflows/publish.yml)
+[![Release Automation](https://github.com/OWNER/REPO/actions/workflows/release.yml/badge.svg)](https://github.com/OWNER/REPO/actions/workflows/release.yml)
+[![Docker Image Size](https://img.shields.io/docker/image-size/OWNER/REPO/latest)](https://github.com/OWNER/REPO/pkgs/container/telegram-media-downloader)
+[![License](https://img.shields.io/github/license/OWNER/REPO)](LICENSE)
 
 ## 🚀 核心特性
 
@@ -78,6 +85,28 @@ docker-compose down
 # 清理资源
 docker-compose down -v --remove-orphans
 ```
+
+### GitHub Actions 自动化部署
+
+本项目使用GitHub Actions进行持续集成和部署：
+
+```bash
+# 拉取最新发布的镜像
+docker pull ghcr.io/huangzulin/telegram-media-downloader:latest
+
+# 运行容器
+docker run -d \
+  --name telegram-media-downloader \
+  -p 3222:3222 \
+  -v ./data:/app/data \
+  -v ./downloads:/app/downloads \
+  -v ./logs:/app/logs \
+  -e APP_ID=your_app_id \
+  -e API_HASH=your_api_hash \
+  ghcr.io/OWNER/REPO:latest
+```
+
+查看所有自动化工作流：[GitHub Actions](https://github.com/OWNER/REPO/actions)
 
 ### 5. Docker Buildx 跨平台编译
 
@@ -191,6 +220,27 @@ GET /me
 ### 登出
 ```
 POST /logout
+```
+
+## 🔄 版本更新
+
+### 检查最新版本
+
+```bash
+# 查看最新版本
+curl -s https://api.github.com/repos/OWNER/REPO/releases/latest | grep tag_name
+
+# 更新到最新版本
+docker pull ghcr.io/OWNER/REPO:latest
+docker-compose up -d
+```
+
+### 版本回滚
+
+```bash
+# 回滚到指定版本
+docker pull ghcr.io/OWNER/REPO:v1.0.0
+docker-compose up -d
 ```
 
 ## 🛠️ 配置选项
