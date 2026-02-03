@@ -3,10 +3,6 @@
 
 Telegram媒体文件下载器 - 一个基于Spring Boot 3.2.5和TDLib的高性能媒体下载服务。
 
-[![CI/CD Pipeline](https://github.com/OWNER/REPO/actions/workflows/ci.yml/badge.svg)](https://github.com/OWNER/REPO/actions/workflows/ci.yml)
-[![Publish Docker Images](https://github.com/OWNER/REPO/actions/workflows/publish.yml/badge.svg)](https://github.com/OWNER/REPO/actions/workflows/publish.yml)
-[![Release Automation](https://github.com/OWNER/REPO/actions/workflows/release.yml/badge.svg)](https://github.com/OWNER/REPO/actions/workflows/release.yml)
-[![Docker Image Size](https://img.shields.io/docker/image-size/OWNER/REPO/latest)](https://github.com/OWNER/REPO/pkgs/container/telegram-media-downloader)
 [![License](https://img.shields.io/github/license/OWNER/REPO)](LICENSE)
 
 ## 🚀 核心特性
@@ -41,14 +37,7 @@ Telegram媒体文件下载器 - 一个基于Spring Boot 3.2.5和TDLib的高性�
 ### 2. 环境配置
 
 ```bash
-# 使用脚本自动创建目录结构
-# Linux/macOS:
-./setup-directories.sh
-
-# Windows:
-setup-directories.bat
-
-# 或手动创建目录
+# 创建必要的目录结构
 mkdir -p data downloads logs
 
 # 复制环境配置文件
@@ -77,14 +66,12 @@ Test=false
 ### 3. 本地运行
 
 ```bash
-# Windows环境下使用mvnw.cmd
+# 编译项目
 ./mvnw.cmd clean package -DskipTests
 
-# 或者直接运行
+# 运行应用
 java -jar target/tmd-1.0.jar
 ```
-
-> 💡 **注意**: 在Windows环境下推荐使用 `./mvnw.cmd` 命令，GitHub Actions中会自动处理权限问题。
 
 ### 4. Docker部署
 
@@ -104,28 +91,6 @@ docker-compose down
 # 清理资源
 docker-compose down -v --remove-orphans
 ```
-
-### GitHub Actions 自动化部署
-
-本项目使用GitHub Actions进行持续集成和部署：
-
-```bash
-# 拉取最新发布的镜像
-docker pull ghcr.io/huangzulin/telegram-media-downloader:latest
-
-# 运行容器
-docker run -d \
-  --name telegram-media-downloader \
-  -p 3222:3222 \
-  -v ./data:/app/data \
-  -v ./downloads:/app/downloads \
-  -v ./logs:/app/logs \
-  -e APP_ID=your_app_id \
-  -e API_HASH=your_api_hash \
-  ghcr.io/OWNER/REPO:latest
-```
-
-查看所有自动化工作流：[GitHub Actions](https://github.com/OWNER/REPO/actions)
 
 ### 5. Docker Buildx 跨平台编译
 
