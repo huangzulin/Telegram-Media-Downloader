@@ -5,7 +5,6 @@ Telegram媒体文件下载器 - 一个基于Spring Boot 3.2.5和TDLib的高性�
 ## 🚀 核心特性
 
 - **高性能并发下载**: 支持多线程并发下载，智能流量控制
-- **多种媒体格式**: 视频、音频、文档等全方位支持
 - **实时进度追踪**: WebSocket实时推送下载状态和进度
 - **完善监控体系**: 内置Actuator监控和Prometheus指标
 - **企业级部署**: Docker容器化，支持Kubernetes编排
@@ -18,7 +17,7 @@ Telegram媒体文件下载器 - 一个基于Spring Boot 3.2.5和TDLib的高性�
 - **Java**: OpenJDK 21+ (推荐Temurin发行版)
 - **构建工具**: Maven 3.9+
 - **容器化**: Docker 20.10+ (可选)
-- **操作系统**: Linux/macOS/Windows
+- **操作系统**: Linux/Windows
 
 ### 依赖服务
 - **Telegram API**: 需要有效的APP_ID和API_HASH
@@ -78,6 +77,103 @@ docker-compose down
 
 # 清理资源
 docker-compose down -v --remove-orphans
+```
+
+### 5. Docker Buildx 跨平台编译
+
+本项目支持使用Docker Buildx进行多平台镜像构建，可为不同架构生成优化的镜像。
+
+#### 启用Buildx
+
+```bash
+# 启用buildx插件
+docker buildx create --name mybuilder --use
+
+# 验证可用平台
+docker buildx inspect --bootstrap
+```
+
+#### 多平台构建命令
+
+```bash
+# 构建并推送到仓库（需要登录）
+docker buildx build \
+  --platform linux/amd64,linux/arm64 \
+  -t your-registry/telegram-media-downloader:latest \
+  --push .
+
+# 仅构建不推送
+docker buildx build \
+  --platform linux/amd64,linux/arm64 \
+  -t telegram-media-downloader:latest .
+
+# 构建特定版本
+docker buildx build \
+  --platform linux/amd64,linux/arm64 \
+  -t telegram-media-downloader:v1.0.0 \
+  --push .
+```
+
+#### 支持的平台架构
+
+- `linux/amd64` - x86_64架构（Intel/AMD 64位）
+- `linux/arm64` - ARM64架构（树莓派、Apple Silicon等）
+- `linux/arm/v7` - ARM32架构（较老的ARM设备）
+
+#### 本地加载特定平台镜像
+
+```bash
+# 构建并加载到本地（单平台）
+docker buildx build \
+  --platform linux/arm64 \
+  -t telegram-media-downloader:arm64 \
+  --load .
+
+# 在ARM设备上运行
+docker run -d \
+  --name tmd-arm64 \
+  -p 3222:3222 \
+  -v ./data:/app/data \
+  -v ./downloads:/app/downloads \
+  -v ./logs:/app/logs \
+  telegram-media-downloader:arm64
+```
+
+#### 使用.dockerignore优化构建
+
+创建 `.dockerignore` 文件以减少构建上下文：
+
+```dockerignore
+.git
+.gitignore
+README.md
+LICENSE
+*.md
+.env
+.env.example
+.DS_Store
+Thumbs.db
+target/
+!target/*.jar
+node_modules/
+temp_test/
+.mvn/
+mvnw*
+```
+
+#### 构建缓存优化
+
+```bash
+# 启用构建缓存
+docker buildx build \
+  --platform linux/amd64,linux/arm64 \
+  --cache-from type=local,src=/tmp/buildx-cache \
+  --cache-to type=local,dest=/tmp/buildx-cache-new \
+  -t telegram-media-downloader:latest .
+
+# 移动缓存目录
+rm -rf /tmp/buildx-cache
+mv /tmp/buildx-cache-new /tmp/buildx-cache
 ```
 
 ## 📊 API接口
