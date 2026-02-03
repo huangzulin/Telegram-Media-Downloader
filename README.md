@@ -60,12 +60,14 @@ API_HASH=your_api_hash_here
 ### 3. 本地运行
 
 ```bash
-# 编译项目
-mvn clean package -DskipTests
+# Windows环境下使用mvnw.cmd
+./mvnw.cmd clean package -DskipTests
 
-# 运行应用
+# 或者直接运行
 java -jar target/tmd-1.0.jar
 ```
+
+> 💡 **注意**: 在Windows环境下推荐使用 `./mvnw.cmd` 命令，GitHub Actions中会自动处理权限问题。
 
 ### 4. Docker部署
 

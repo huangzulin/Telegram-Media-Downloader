@@ -26,6 +26,14 @@ jobs:
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
+      with:
+        persist-credentials: false
+        fetch-depth: 0
+        
+    - name: Set up file permissions
+      run: |
+        chmod +x ./mvnw
+        ls -la ./mvnw
       
     - name: Extract version
       id: extract_version

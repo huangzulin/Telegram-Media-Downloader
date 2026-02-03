@@ -19,6 +19,11 @@ jobs:
       with:
         fetch-depth: 0
         
+    - name: Set up file permissions
+      run: |
+        chmod +x ./mvnw
+        ls -la ./mvnw
+        
     - name: Extract tag information
       id: tag_info
       run: |
