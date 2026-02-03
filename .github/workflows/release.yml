@@ -21,7 +21,7 @@ jobs:
     - name: Set executable permissions
       run: |
         chmod +x ./mvnw
-        
+
     - name: Setup Java
       uses: actions/setup-java@v4
       with:

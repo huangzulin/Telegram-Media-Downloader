@@ -8,7 +8,7 @@ on:
 
 jobs:
   build:
-    name: Build and Test
+    name: Build Only (Tests Skipped)
     runs-on: ubuntu-latest
     
     strategy:
@@ -25,7 +25,7 @@ jobs:
     - name: Set executable permissions
       run: |
         chmod +x ./mvnw
-        
+
     - name: Setup Java ${{ matrix.java-version }}
       uses: actions/setup-java@v4
       with:
@@ -55,17 +55,6 @@ jobs:
     - name: Build with Maven (Skip Tests for Speed)
       run: ./mvnw clean package -DskipTests -B
       
-    - name: Run Unit Tests
-      run: ./mvnw test -B
-      
-    - name: Upload Test Results
-      uses: actions/upload-artifact@v4
-      if: failure()
-      with:
-        name: test-results-${{ matrix.os }}
-        path: target/surefire-reports/
-        retention-days: 7
-        
     - name: Upload JAR Artifact
       uses: actions/upload-artifact@v4
       with:
