@@ -84,12 +84,14 @@ Test=false
 ### 3. 本地运行
 
 ```bash
-# 编译项目
+# 编译项目（自动根据平台引入对应依赖）
 ./mvnw.cmd clean package -DskipTests
 
 # 运行应用
 java -jar target/tmd-1.0.jar
 ```
+
+> 💡 **平台适配说明**：项目使用Maven Profiles自动检测运行平台并引入对应的TDLib原生库依赖，支持Windows、Linux、macOS的x64和ARM64架构。
 
 ### 4. Docker一键部署
 
@@ -421,7 +423,7 @@ src/
 
 ### 编译和测试
 ```bash
-# 编译项目
+# 编译项目（自动根据平台引入对应依赖）
 mvn clean compile
 
 # 运行测试
@@ -429,6 +431,29 @@ mvn test
 
 # 打包应用
 mvn package -DskipTests
+```
+
+### 平台特定依赖说明
+
+本项目使用Maven Profiles自动检测运行平台并引入对应的TDLib原生库依赖：
+
+**支持的平台配置：**
+- **Windows x64**: `windows_amd64`
+- **Linux x64**: `linux_amd64_gnu_ssl3`
+- **Linux ARM64**: `linux_arm64_gnu_ssl3`
+- **macOS x64**: `macos_x64`
+- **macOS ARM64**: `macos_arm64`
+
+**手动指定平台编译：**
+```bash
+# 为特定平台构建
+mvn clean package -P linux-arm64
+
+# 查看当前激活的profiles
+mvn help:active-profiles
+
+# 强制激活特定profile
+mvn clean package -P windows-x64
 ```
 
 ## 🤝 贡献

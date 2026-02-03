@@ -111,21 +111,7 @@
             <version>0.7.0</version>
         </dependency>
 
-        <dependency>
-            <groupId>it.tdlight</groupId>
-            <artifactId>tdlight-natives</artifactId>
-            <classifier>windows_amd64</classifier>
-        </dependency>
-        <dependency>
-            <groupId>it.tdlight</groupId>
-            <artifactId>tdlight-natives</artifactId>
-            <classifier>linux_amd64_gnu_ssl3</classifier>
-        </dependency>
-        <dependency>
-            <groupId>it.tdlight</groupId>
-            <artifactId>tdlight-natives</artifactId>
-            <classifier>linux_arm64_gnu_ssl3</classifier>
-        </dependency>
+        <!-- tdlight-natives依赖将通过profiles根据平台自动引入 -->
     </dependencies>
 
     <dependencyManagement>
@@ -194,5 +180,99 @@
             </plugin>
         </plugins>
     </build>
+
+    <profiles>
+        <!-- Windows x64 平台 -->
+        <profile>
+            <id>windows-x64</id>
+            <activation>
+                <os>
+                    <family>windows</family>
+                    <arch>amd64</arch>
+                </os>
+            </activation>
+            <dependencies>
+                <dependency>
+                    <groupId>it.tdlight</groupId>
+                    <artifactId>tdlight-natives</artifactId>
+                    <classifier>windows_amd64</classifier>
+                </dependency>
+            </dependencies>
+        </profile>
+
+        <!-- Linux x64 平台 -->
+        <profile>
+            <id>linux-x64</id>
+            <activation>
+                <os>
+                    <family>unix</family>
+                    <name>linux</name>
+                    <arch>amd64</arch>
+                </os>
+            </activation>
+            <dependencies>
+                <dependency>
+                    <groupId>it.tdlight</groupId>
+                    <artifactId>tdlight-natives</artifactId>
+                    <classifier>linux_amd64_gnu_ssl3</classifier>
+                </dependency>
+            </dependencies>
+        </profile>
+
+        <!-- Linux ARM64 平台 -->
+        <profile>
+            <id>linux-arm64</id>
+            <activation>
+                <os>
+                    <family>unix</family>
+                    <name>linux</name>
+                    <arch>aarch64</arch>
+                </os>
+            </activation>
+            <dependencies>
+                <dependency>
+                    <groupId>it.tdlight</groupId>
+                    <artifactId>tdlight-natives</artifactId>
+                    <classifier>linux_arm64_gnu_ssl3</classifier>
+                </dependency>
+            </dependencies>
+        </profile>
+
+        <!-- macOS x64 平台 -->
+        <profile>
+            <id>macos-x64</id>
+            <activation>
+                <os>
+                    <family>mac</family>
+                    <arch>x86_64</arch>
+                </os>
+            </activation>
+            <dependencies>
+                <dependency>
+                    <groupId>it.tdlight</groupId>
+                    <artifactId>tdlight-natives</artifactId>
+                    <classifier>macos_x64</classifier>
+                </dependency>
+            </dependencies>
+        </profile>
+
+        <!-- macOS ARM64 (Apple Silicon) 平台 -->
+        <profile>
+            <id>macos-arm64</id>
+            <activation>
+                <os>
+                    <family>mac</family>
+                    <arch>aarch64</arch>
+                </os>
+            </activation>
+            <dependencies>
+                <dependency>
+                    <groupId>it.tdlight</groupId>
+                    <artifactId>tdlight-natives</artifactId>
+                    <classifier>macos_arm64</classifier>
+                </dependency>
+            </dependencies>
+        </profile>
+    </profiles>
 
 </project>
