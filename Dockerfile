@@ -65,10 +65,7 @@ ENV JAVA_OPTS="-Xmx512m -Xms256m \
     -XX:MaxGCPauseMillis=200 \
     -XX:+UnlockExperimentalVMOptions \
     -XX:+UseContainerSupport \
-    -Xlog:gc*:gc.log:time,tags:filecount=5,filesize=10M \
-    -XX:+UseGCLogFileRotation \
-    -XX:NumberOfGCLogFiles=5 \
-    -XX:GCLogFileSize=10M"
+    -Xlog:gc*:gc.log:time,tags:filecount=5,filesize=10M"
 
 # Application entrypoint with signal handling
 ENTRYPOINT ["sh", "-c", "java $JAVA_OPTS -jar app.jar"]
