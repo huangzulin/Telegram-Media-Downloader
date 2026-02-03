@@ -1,29 +1,23 @@
-name: Publish Docker Image
+name: AMD64 Docker Build and Publish
 
 on:
   push:
-    tags: [ 'v*.*.*' ]
     branches: [ main ]
-    paths:
-      - 'src/**'
-      - 'pom.xml'
-      - 'Dockerfile'
-      - '.github/workflows/publish.yml'
   workflow_dispatch:
 
 env:
   IMAGE_NAME: huangzulin/telegram-media-downloader
 
 jobs:
-  build-and-push:
-    name: Build and Push
+  build-and-publish:
+    name: Build AMD64 Docker Image
     runs-on: ubuntu-latest
     
     steps:
-    - name: Checkout
+    - name: Checkout Code
       uses: actions/checkout@v4
       
-    - name: Setup Docker Buildx
+    - name: Set up Docker Buildx
       uses: docker/setup-buildx-action@v3
       
     - name: Login to DockerHub
@@ -33,18 +27,25 @@ jobs:
         username: ${{ secrets.DOCKERHUB_USERNAME }}
         password: ${{ secrets.DOCKERHUB_TOKEN }}
         
-    - name: Prepare Build
+    - name: Prepare Environment
       run: |
         chmod +x ./mvnw
-        TAG=${GITHUB_REF_NAME:-latest}
-        echo "tag=$TAG" >> $GITHUB_ENV
+        # 获取标签名或使用latest
+        if [[ $GITHUB_REF == refs/tags/* ]]; then
+          TAG=${GITHUB_REF#refs/tags/}
+        else
+          TAG=latest
+        fi
+        echo "IMAGE_TAG=$TAG" >> $GITHUB_ENV
         
-    - name: Build and Push
+    - name: Build and Push AMD64 Image
       uses: docker/build-push-action@v5
       with:
         context: .
         platforms: linux/amd64
         push: true
-        tags: ${{ env.IMAGE_NAME }}:${{ env.tag }},${{ env.IMAGE_NAME }}:latest
+        tags: |
+          ${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }}
+          ${{ env.IMAGE_NAME }}:latest
         cache-from: type=gha
         cache-to: type=gha,mode=max
