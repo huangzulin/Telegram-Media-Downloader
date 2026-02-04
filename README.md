@@ -2,8 +2,7 @@
 
 高性能的Telegram媒体下载器，支持从频道和群组批量下载媒体文件。
 
-[![CI Build](https://github.com/huangzulin/Telegram-Media-Downloader/actions/workflows/ci.yml/badge.svg)](https://github.com/huangzulin/Telegram-Media-Downloader/actions/workflows/ci.yml)
-[![Publish Docker](https://github.com/huangzulin/Telegram-Media-Downloader/actions/workflows/publish.yml/badge.svg)](https://github.com/huangzulin/Telegram-Media-Downloader/actions/workflows/publish.yml)
+
 [![Docker Pulls](https://img.shields.io/docker/pulls/huangzulin/telegram-media-downloader)](https://hub.docker.com/r/huangzulin/telegram-media-downloader)
 [![License](https://img.shields.io/github/license/huangzulin/Telegram-Media-Downloader)](LICENSE)
 
@@ -77,22 +76,6 @@ services:
 3. 创建新的应用程序获取 `app_id` 和 `API_HASH`
 4. 将凭据通过环境变量传递给应用：
 
-```bash
-# Docker运行时
-docker run -d \
-  --name telegram-downloader \
-  -p 3222:3222 \
-  -e APP_ID=your_app_id \
-  -e API_HASH=your_API_HASH \
-  -v ./downloads:/app/downloads \
-  huangzulin/telegram-media-downloader:latest
-
-# Docker Compose
-environment:
-  - APP_ID=your_app_id
-  - API_HASH=your_API_HASH
-  - TZ=Asia/Shanghai
-```
 
 **注意**: `APP_ID` 和 `API_HASH` 是使用Telegram API的必需凭据，请妥善保管。
 
@@ -122,14 +105,6 @@ docker build -t telegram-media-downloader .
 # 运行
 docker run -p 3222:3222 telegram-media-downloader
 ```
-
-## CI/CD配置
-
-本项目使用GitHub Actions进行持续集成和部署：
-
-- **CI Build**: 自动编译、测试和打包
-- **Publish Docker**: 自动构建并推送Docker镜像到DockerHub
-- **Release**: 自动生成Release版本
 
 ## 许可证
 
