@@ -1,4 +1,4 @@
-package fun.zulin.tmd.telegram.handler;
+package fun.zulin.tmd;
 
 import fun.zulin.tmd.data.item.DownloadItem;
 import org.junit.jupiter.api.Test;

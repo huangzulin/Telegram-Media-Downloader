@@ -111,8 +111,6 @@
             <version>0.7.0</version>
         </dependency>
 
-        <!-- tdlight-natives依赖将通过profiles根据平台自动引入 -->
-
         <dependency>
             <groupId>it.tdlight</groupId>
             <artifactId>tdlight-natives</artifactId>
@@ -218,7 +216,4 @@
             </plugin>
         </plugins>
     </build>
-
-
-
 </project>

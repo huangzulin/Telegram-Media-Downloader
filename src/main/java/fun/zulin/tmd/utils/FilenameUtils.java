@@ -5,7 +5,6 @@ import lombok.extern.slf4j.Slf4j;
 import java.net.URLDecoder;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
-import java.text.Normalizer;
 import java.util.regex.Pattern;
 
 /**
@@ -14,9 +13,6 @@ import java.util.regex.Pattern;
  */
 @Slf4j
 public class FilenameUtils {
-    
-    // 不允许的文件名字符（Windows/Linux通用）
-    private static final Pattern INVALID_CHARS_PATTERN = Pattern.compile("[<>:\"/\\\\|?*\\x00-\\x1F]");
     
     // 需要替换为空格的特殊字符模式
     private static final Pattern SPECIAL_CHARS_PATTERN = Pattern.compile("[\\[\\](){}<>:\"'/\\\\|?*\\x00-\\x1F【】（）。，、；：？！‘’“”…]+");

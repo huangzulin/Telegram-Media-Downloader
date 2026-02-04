@@ -5,7 +5,6 @@ import fun.zulin.tmd.data.item.DownloadItemServiceImpl;
 import fun.zulin.tmd.data.item.DownloadState;
 import fun.zulin.tmd.telegram.DownloadManage;
 import fun.zulin.tmd.telegram.Tmd;
-import fun.zulin.tmd.utils.FilenameUtils;
 import fun.zulin.tmd.utils.SpringContext;
 import it.tdlight.jni.TdApi;
 import lombok.extern.slf4j.Slf4j;
@@ -22,7 +21,6 @@ public class UpdateNewMessageHandler {
 
         var messageContent = update.message.content;
         var messageId = update.message.id;
-        TdApi.User me = Tmd.me;
         TdApi.Chat savedMessagesChat = Tmd.savedMessagesChat;
 
         if (update.message.chatId != savedMessagesChat.id) {

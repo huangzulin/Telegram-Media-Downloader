@@ -2,10 +2,10 @@
 
 高性能的Telegram媒体下载器，支持从频道和群组批量下载媒体文件。
 
-[![CI Build](https://github.com/zulinfun/Telegram-Media-Downloader/actions/workflows/ci.yml/badge.svg)](https://github.com/zulinfun/Telegram-Media-Downloader/actions/workflows/ci.yml)
-[![Publish Docker](https://github.com/zulinfun/Telegram-Media-Downloader/actions/workflows/publish.yml/badge.svg)](https://github.com/zulinfun/Telegram-Media-Downloader/actions/workflows/publish.yml)
-[![Docker Pulls](https://img.shields.io/docker/pulls/zulinfun/telegram-media-downloader)](https://hub.docker.com/r/zulinfun/telegram-media-downloader)
-[![License](https://img.shields.io/github/license/zulinfun/Telegram-Media-Downloader)](LICENSE)
+[![CI Build](https://github.com/huangzulin/Telegram-Media-Downloader/actions/workflows/ci.yml/badge.svg)](https://github.com/huangzulin/Telegram-Media-Downloader/actions/workflows/ci.yml)
+[![Publish Docker](https://github.com/huangzulin/Telegram-Media-Downloader/actions/workflows/publish.yml/badge.svg)](https://github.com/huangzulin/Telegram-Media-Downloader/actions/workflows/publish.yml)
+[![Docker Pulls](https://img.shields.io/docker/pulls/huangzulin/telegram-media-downloader)](https://hub.docker.com/r/huangzulin/telegram-media-downloader)
+[![License](https://img.shields.io/github/license/huangzulin/Telegram-Media-Downloader)](LICENSE)
 
 ## 特性
 
@@ -27,13 +27,13 @@
 docker pull huangzulin/telegram-media-downloader:latest
 
 # 运行容器
-docker run -d \
+docker run -d --restart unless-stopped \
   --name telegram-downloader \
   -p 3222:3222 \
   -v ./downloads:/app/downloads \
-  -v ./config:/app/config \
-  -v ./logs:/app/logs \
-  zulinfun/telegram-media-downloader:latest
+  -e APP_ID=1234567 \
+  -e API_HASH=your_api_hash \
+  huangzulin/telegram-media-downloader:latest
 ```
 
 ### Docker Compose
@@ -42,7 +42,7 @@ docker run -d \
 version: '3.8'
 services:
   telegram-downloader:
-    image: zulinfun/telegram-media-downloader:latest
+    image: huangzulin/telegram-media-downloader:latest
     container_name: telegram-downloader
     ports:
       - "3222:3222"
@@ -52,6 +52,8 @@ services:
       - ./logs:/app/logs
     environment:
       - TZ=Asia/Shanghai
+      - APP_ID=your_app_id
+      - API_HASH=your_api_hash
     restart: unless-stopped
 ```
 
@@ -64,7 +66,7 @@ services:
 | VIDEOS_DIR | /app/downloads/videos | 视频存储目录 |
 | THUMBNAILS_DIR | /app/downloads/thumbnails | 缩略图目录 |
 | APP_ID | 无 | Telegram API App ID (必需) |
-| APP_HASH | 无 | Telegram API App Hash (必需) |
+| API_HASH | 无 | Telegram API App Hash (必需) |
 
 ### Telegram API 凭据配置
 
@@ -72,7 +74,7 @@ services:
 
 1. 访问 [Telegram API开发者页面](https://my.telegram.org/auth)
 2. 登录您的Telegram账户
-3. 创建新的应用程序获取 `app_id` 和 `app_hash`
+3. 创建新的应用程序获取 `app_id` 和 `API_HASH`
 4. 将凭据通过环境变量传递给应用：
 
 ```bash
@@ -81,18 +83,18 @@ docker run -d \
   --name telegram-downloader \
   -p 3222:3222 \
   -e APP_ID=your_app_id \
-  -e APP_HASH=your_app_hash \
+  -e API_HASH=your_API_HASH \
   -v ./downloads:/app/downloads \
-  zulinfun/telegram-media-downloader:latest
+  huangzulin/telegram-media-downloader:latest
 
 # Docker Compose
 environment:
   - APP_ID=your_app_id
-  - APP_HASH=your_app_hash
+  - API_HASH=your_API_HASH
   - TZ=Asia/Shanghai
 ```
 
-**注意**: `APP_ID` 和 `APP_HASH` 是使用Telegram API的必需凭据，请妥善保管。
+**注意**: `APP_ID` 和 `API_HASH` 是使用Telegram API的必需凭据，请妥善保管。
 
 ## 访问应用
 
@@ -104,7 +106,7 @@ environment:
 
 ```bash
 # 克隆项目
-git clone https://github.com/zulinfun/Telegram-Media-Downloader.git
+git clone https://github.com/huangzulin/Telegram-Media-Downloader.git
 cd Telegram-Media-Downloader
 
 # 编译运行

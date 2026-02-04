@@ -104,7 +104,6 @@ public class QRCodeService {
      * @return Base64编码的PNG图片数据
      */
     public String generateQRCodeWithLogo(String content, String logoPath) {
-        // TODO: 实现带logo的二维码生成功能
         return generateQRCode(content);
     }
 

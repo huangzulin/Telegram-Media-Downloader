@@ -2,8 +2,6 @@ package fun.zulin.tmd.integration;
 
 import fun.zulin.tmd.data.item.DownloadItem;
 import fun.zulin.tmd.data.item.DownloadItemServiceImpl;
-import fun.zulin.tmd.data.item.DownloadState;
-import fun.zulin.tmd.telegram.handler.UpdateNewMessageHandler;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
@@ -22,13 +20,6 @@ public class PureIdFilenameIntegrationTest {
         // 模拟下载项创建流程
         String originalFilename = "极品大长腿丝袜御姐【小林的涩涩日常】SVIP1月13日新作.mp4";
         Long expectedId = 123L;
-        
-        // 模拟service行为
-        DownloadItem tempItem = DownloadItem.builder()
-                .id(null) // 初始为null
-                .filename("temp_placeholder")
-                .description("测试描述")
-                .build();
                 
         DownloadItem savedItem = DownloadItem.builder()
                 .id(expectedId) // 保存后获得ID

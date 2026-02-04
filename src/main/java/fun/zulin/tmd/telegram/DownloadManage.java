@@ -1,7 +1,6 @@
 package fun.zulin.tmd.telegram;
 
 import cn.hutool.core.collection.CollectionUtil;
-import cn.hutool.core.util.RandomUtil;
 import fun.zulin.tmd.common.constant.SystemConstants;
 import fun.zulin.tmd.data.item.DownloadItem;
 import fun.zulin.tmd.data.item.DownloadItemServiceImpl;

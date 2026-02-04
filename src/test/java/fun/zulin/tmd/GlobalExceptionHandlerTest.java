@@ -1,7 +1,10 @@
-package fun.zulin.tmd.common.exception;
+package fun.zulin.tmd;
 
 import org.junit.jupiter.api.Test;
-import org.springframework.http.HttpStatus;
+
+import fun.zulin.tmd.common.exception.ApiResponse;
+import fun.zulin.tmd.common.exception.BusinessException;
+import fun.zulin.tmd.common.exception.ErrorCode;
 
 import static org.junit.jupiter.api.Assertions.*;
 

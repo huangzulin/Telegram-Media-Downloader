@@ -13,7 +13,6 @@ import lombok.NoArgsConstructor;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
-import java.time.ZoneOffset;
 
 @Data
 @Builder
@@ -107,6 +106,7 @@ public class DownloadItem {
     /**
      * 下载计数器
      */
+    @Builder.Default
     private Integer downloadCount = 0;
     
     // 添加getter方法确保不会返回null

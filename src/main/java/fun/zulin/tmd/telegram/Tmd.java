@@ -2,10 +2,7 @@ package fun.zulin.tmd.telegram;
 
 
 import cn.hutool.core.convert.Convert;
-import cn.hutool.core.io.resource.ResourceUtil;
-import cn.hutool.core.util.BooleanUtil;
 import cn.hutool.core.util.StrUtil;
-import cn.hutool.setting.dialect.Props;
 import fun.zulin.tmd.telegram.handler.AuthorizationStateWaitOtherDeviceConfirmationHandler;
 import fun.zulin.tmd.telegram.handler.UpdateFileHandler;
 import fun.zulin.tmd.telegram.handler.UpdateNewMessageHandler;
@@ -23,7 +20,6 @@ import org.springframework.stereotype.Component;
 import java.io.File;
 import java.io.InputStream;
 import java.nio.file.Files;
-import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Properties;
 import java.util.concurrent.TimeUnit;

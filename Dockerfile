@@ -1,9 +1,9 @@
-# Multi-stage build for optimal image size and security
+# Multi-stage build for optimal image size and cross-platform compatibility
 
-# Backend build stage
-FROM maven:3.9.7-eclipse-temurin-21 AS backend-build
-LABEL stage=backend
-LABEL org.opencontainers.image.description="Backend build stage"
+# Backend build stage - 使用跨平台兼容的Maven镜像
+FROM maven:3.9.7-eclipse-temurin-21 AS builder
+LABEL stage=builder
+LABEL org.opencontainers.image.description="Cross-platform backend build stage"
 
 WORKDIR /build
 
@@ -11,28 +11,29 @@ WORKDIR /build
 COPY src src
 COPY pom.xml .
 
-# Build application
+# Build application with platform-independent settings
 RUN mvn clean package -DskipTests -Dmaven.repo.local=/tmp/.m2
 
-# Production stage
-FROM eclipse-temurin:21-jre-alpine
+# Production stage - 使用跨平台兼容的OpenJDK镜像
+FROM eclipse-temurin:21
 LABEL maintainer="Telegram Media Downloader Team"
 LABEL org.opencontainers.image.title="Telegram Media Downloader"
-LABEL org.opencontainers.image.description="High-performance Telegram media downloader service"
+LABEL org.opencontainers.image.description="Cross-platform high-performance Telegram media downloader service"
 LABEL org.opencontainers.image.version="1.0"
 LABEL org.opencontainers.image.licenses="MIT"
+LABEL org.opencontainers.image.architecture="multi-platform"
 
 # Install required system packages including FFmpeg for video processing
-RUN apk add --no-cache \
+# 使用apt-get而不是apk，因为openjdk:21-slim基于Debian
+RUN apt-get update && apt-get install -y \
     curl \
     openssl \
-    tzdata \
     ffmpeg \
-    && rm -rf /var/cache/apk/*
+    tzdata \
+    && rm -rf /var/lib/apt/lists/*
 
 # Create non-root user for security
-RUN addgroup -g 1001 -S appuser && \
-    adduser -u 1001 -S appuser -G appuser
+RUN groupadd -r appuser && useradd -r -g appuser appuser
 
 # Set timezone
 ENV TZ=Asia/Shanghai
@@ -47,8 +48,8 @@ RUN mkdir -p data downloads/videos downloads/thumbnails downloads/temp logs conf
 RUN chmod -R 755 downloads \
     && chmod 777 downloads/videos downloads/thumbnails downloads/temp
 
-# Copy application artifact
-COPY --from=backend-build --chown=appuser:appuser /build/target/*.jar app.jar
+# Copy application artifact from builder stage
+COPY --from=builder --chown=appuser:appuser /build/target/*.jar app.jar
 
 # 创建软链接便于外部访问（可选）
 RUN ln -sf /app/downloads /downloads-shared
@@ -66,13 +67,12 @@ HEALTHCHECK --interval=30s \
     --retries=3 \
     CMD curl -f http://localhost:3222/actuator/health || exit 1
 
-# JVM tuning for containerized environment
+# JVM tuning for containerized environment with cross-platform considerations
 ENV JAVA_OPTS="-Xmx512m -Xms256m \
     -XX:+UseG1GC \
     -XX:MaxGCPauseMillis=200 \
-    -XX:+UnlockExperimentalVMOptions \
     -XX:+UseContainerSupport \
-    -Xlog:gc*:gc.log:time,tags:filecount=5,filesize=10M"
+    -Djava.security.egd=file:/dev/./urandom"
 
 # 设置下载目录环境变量，支持自定义挂载路径
 ENV DOWNLOAD_DIR=/app/downloads
@@ -81,4 +81,3 @@ ENV THUMBNAILS_DIR=/app/downloads/thumbnails
 
 # Application entrypoint with signal handling
 ENTRYPOINT ["sh", "-c", "java $JAVA_OPTS -jar app.jar"]
-
