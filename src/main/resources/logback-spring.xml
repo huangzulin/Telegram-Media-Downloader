@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+    <!-- 控制台输出 -->
+    <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n</pattern>
+        </encoder>
+    </appender>
+
+    <!-- 文件输出 -->
+    <appender name="FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>logs/tmd.log</file>
+        <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
+            <fileNamePattern>logs/tmd.%d{yyyy-MM-dd}.%i.log</fileNamePattern>
+            <maxFileSize>10MB</maxFileSize>
+            <maxHistory>30</maxHistory>
+            <totalSizeCap>100MB</totalSizeCap>
+        </rollingPolicy>
+        <encoder>
+            <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n%ex</pattern>
+        </encoder>
+    </appender>
+
+    <!-- 减少WebSocket统计日志输出 -->
+    <logger name="org.springframework.web.socket" level="WARN"/>
+    <logger name="org.springframework.web.socket.config" level="WARN"/>
+    <logger name="org.springframework.web.socket.handler" level="WARN"/>
+    <logger name="org.springframework.web.socket.messaging" level="WARN"/>
+    <logger name="org.springframework.web.socket.sockjs" level="WARN"/>
+    <logger name="org.springframework.web.socket.sockjs.transport" level="WARN"/>
+    
+    <!-- 特别抑制WebSocketMessageBrokerStats的INFO级别日志 -->
+    <logger name="org.springframework.web.socket.config.WebSocketMessageBrokerStats" level="WARN"/>
+    
+    <!-- STOMP协议相关日志 -->
+    <logger name="org.springframework.messaging.simp.stomp" level="WARN"/>
+    <logger name="org.springframework.messaging.simp.broker" level="WARN"/>
+    
+    <!-- 应用程序日志 -->
+    <logger name="fun.zulin.tmd" level="INFO"/>
+    
+    <!-- 数据库相关 -->
+    <logger name="org.mybatis" level="WARN"/>
+    <logger name="org.apache.ibatis" level="WARN"/>
+    <logger name="com.zaxxer.hikari" level="WARN"/>
+    
+    <!-- 根日志级别 -->
+    <root level="INFO">
+        <appender-ref ref="CONSOLE"/>
+        <appender-ref ref="FILE"/>
+    </root>
+</configuration>

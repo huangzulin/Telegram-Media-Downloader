@@ -47,7 +47,6 @@
 1. 更新 `CHANGELOG.md`
 2. 提交更改并打版本标签：
    ```bash
-   git add CHANGELOG.md
    git commit -m "Prepare release v1.0.0"
    git tag v1.0.0
    git push origin main --tags

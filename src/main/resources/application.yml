@@ -72,6 +72,10 @@ websocket:
   message-size-limit: 65536
   send-timeout: 10000
   disconnect-delay: 30000
+  # 统计信息配置
+  stats:
+    enabled: false  # 禁用WebSocket统计信息输出
+    logging-period: 3600000  # 统计日志间隔（毫秒）
   metrics:
     export:
       prometheus:
@@ -137,13 +141,21 @@ logging:
     root: INFO
     fun.zulin.tmd: INFO
     org.springframework.web: INFO
+    # WebSocket相关日志控制
+    org.springframework.web.socket: WARN
+    org.springframework.web.socket.config: WARN
+    org.springframework.web.socket.config.WebSocketMessageBrokerStats: WARN
+    org.springframework.web.socket.messaging: WARN
+    org.springframework.messaging.simp.stomp: WARN
+    org.springframework.messaging.simp.broker: WARN
+    # 数据库相关
     org.mybatis: WARN
     org.apache.ibatis: WARN
     com.zaxxer.hikari: WARN
     org.mybatis.spring.SqlSessionUtils: WARN
     org.mybatis.spring.transaction: WARN
   pattern:
-    console: "%clr(%d{yyyy-MM-dd HH:mm:ss.SSS}){faint} %clr(${LOG_LEVEL_PATTERN:-%5p}) %clr(${PID:- }){magenta} %clr(---){faint} %clr([%15.15t]){faint} %clr(%-40.40logger{39}){cyan} %clr(:){faint} %m%n${LOG_EXCEPTION_CONVERSION_WORD:-%wEx}"
+    console: "%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n"
     file: "%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n"
   file:
     name: ${LOG_FILE:logs/tmd.log}

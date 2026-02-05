@@ -107,6 +107,7 @@ public class DownloadItem {
     /**
      * 下载计数器
      */
+    @Builder.Default
     private Integer downloadCount = 0;
     
     // 添加getter方法确保不会返回null

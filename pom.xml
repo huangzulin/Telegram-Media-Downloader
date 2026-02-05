@@ -92,9 +92,6 @@
         <dependency>
             <groupId>it.tdlight</groupId>
             <artifactId>tdlight-java</artifactId>
-            <version>3.4.0+td.1.8.26</version>
-            <scope>system</scope>
-            <systemPath>${project.basedir}/lib/tdlight-java-3.4.0+td.1.8.26.jar</systemPath>
         </dependency>
         <dependency>
             <groupId>com.google.zxing</groupId>
@@ -114,33 +111,7 @@
             <version>0.7.0</version>
         </dependency>
 
-        <!-- tdlight-natives本地jar包依赖 -->
-        <dependency>
-            <groupId>it.tdlight</groupId>
-            <artifactId>tdlight-natives</artifactId>
-            <version>3.4.0+td.1.8.26</version>
-            <classifier>windows_amd64</classifier>
-            <scope>system</scope>
-            <systemPath>${project.basedir}/lib/tdlight-natives-windows_amd64.jar</systemPath>
-        </dependency>
-
-        <dependency>
-            <groupId>it.tdlight</groupId>
-            <artifactId>tdlight-natives</artifactId>
-            <version>3.4.0+td.1.8.26</version>
-            <classifier>linux_arm64_gnu_ssl3</classifier>
-            <scope>system</scope>
-            <systemPath>${project.basedir}/lib/tdlight-natives-linux_arm64_gnu_ssl3.jar</systemPath>
-        </dependency>
-
-        <dependency>
-            <groupId>it.tdlight</groupId>
-            <artifactId>tdlight-natives</artifactId>
-            <version>3.4.0+td.1.8.26</version>
-            <classifier>linux_amd64_gnu_ssl3</classifier>
-            <scope>system</scope>
-            <systemPath>${project.basedir}/lib/tdlight-natives-linux_amd64_gnu_ssl3.jar</systemPath>
-        </dependency>
+        <!-- tdlight-natives依赖将通过profiles根据平台自动引入 -->
     </dependencies>
 
     <dependencyManagement>
@@ -189,6 +160,58 @@
             <url>https://maven.aliyun.com/repository/public</url>
         </pluginRepository>
     </pluginRepositories>
+
+    <!-- Profiles for different platforms -->
+    <profiles>
+        <profile>
+            <id>linux-x64</id>
+            <activation>
+                <os>
+                    <family>unix</family>
+                    <arch>amd64</arch>
+                </os>
+            </activation>
+            <dependencies>
+                <dependency>
+                    <groupId>it.tdlight</groupId>
+                    <artifactId>tdlight-natives</artifactId>
+                    <classifier>linux_amd64_gnu_ssl3</classifier>
+                </dependency>
+            </dependencies>
+        </profile>
+        <profile>
+            <id>linux-arm64</id>
+            <activation>
+                <os>
+                    <family>unix</family>
+                    <arch>aarch64</arch>
+                </os>
+            </activation>
+            <dependencies>
+                <dependency>
+                    <groupId>it.tdlight</groupId>
+                    <artifactId>tdlight-natives</artifactId>
+                    <classifier>linux_arm64_gnu_ssl3</classifier>
+                </dependency>
+            </dependencies>
+        </profile>
+        <profile>
+            <id>windows-x64</id>
+            <activation>
+                <os>
+                    <family>windows</family>
+                    <arch>amd64</arch>
+                </os>
+            </activation>
+            <dependencies>
+                <dependency>
+                    <groupId>it.tdlight</groupId>
+                    <artifactId>tdlight-natives</artifactId>
+                    <classifier>windows_amd64</classifier>
+                </dependency>
+            </dependencies>
+        </profile>
+    </profiles>
 
     <build>
         <plugins>

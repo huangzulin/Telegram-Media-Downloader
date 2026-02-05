@@ -5,6 +5,7 @@ import org.springframework.messaging.simp.config.MessageBrokerRegistry;
 import org.springframework.web.socket.config.annotation.EnableWebSocketMessageBroker;
 import org.springframework.web.socket.config.annotation.StompEndpointRegistry;
 import org.springframework.web.socket.config.annotation.WebSocketMessageBrokerConfigurer;
+import org.springframework.web.socket.config.annotation.WebSocketTransportRegistration;
 
 /**
  * WebSocket配置类
@@ -26,5 +27,13 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
         // 配置消息代理
         registry.enableSimpleBroker("/topic");
         registry.setApplicationDestinationPrefixes("/app");
+    }
+
+    @Override
+    public void configureWebSocketTransport(WebSocketTransportRegistration registry) {
+        // 配置WebSocket传输参数
+        registry.setMessageSizeLimit(65536) // 64KB
+                .setSendBufferSizeLimit(512 * 1024) // 512KB
+                .setSendTimeLimit(10000); // 10秒
     }
 }

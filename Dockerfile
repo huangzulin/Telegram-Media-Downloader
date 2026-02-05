@@ -1,34 +1,63 @@
 # Multi-stage build for optimal image size and security
+# Supports multi-platform builds (amd64/arm64)
 
-# Backend build stage
-FROM maven:3.9.7-eclipse-temurin-21 AS backend-build
+# Backend build stage - use platform-specific base image
+FROM --platform=$BUILDPLATFORM maven:3.9.7-eclipse-temurin-21 AS backend-build
 LABEL stage=backend
 LABEL org.opencontainers.image.description="Backend build stage"
+LABEL org.opencontainers.image.authors="Telegram Media Downloader Team"
+
+# Enable BuildKit for better caching and multi-platform support
+# syntax=docker/dockerfile:1
 
 WORKDIR /build
 
+# Configure Maven for cross-platform builds
+ENV MAVEN_OPTS="-Xmx1g -Dmaven.repo.local=/root/.m2/repository"
+
 # Copy source code and dependencies
-COPY src src
 COPY pom.xml .
 
-# Build application
-RUN mvn clean package -DskipTests -Dmaven.repo.local=/tmp/.m2
+# Download dependencies with platform-specific caching
+RUN --mount=type=cache,target=/root/.m2,sharing=locked \
+    mvn dependency:go-offline -B
 
-# Production stage
-FROM eclipse-temurin:21-jre-alpine
+COPY src src
+
+# Build application with profile support
+# 显式指定MAVEN_PROFILE参数，默认为linux-x64以确保Linux环境下的TDLight正确加载
+ARG MAVEN_PROFILE=linux-x64
+RUN --mount=type=cache,target=/root/.m2,sharing=locked \
+    echo "Using MAVEN_PROFILE: $MAVEN_PROFILE" && \
+    mvn clean package -P${MAVEN_PROFILE} -DskipTests -Drevision=${TARGETARCH} && \
+    mvn dependency:tree | grep tdlight || echo "Warning: TDLight dependencies not found"
+
+# Production stage - explicitly support both platforms
+FROM --platform=$TARGETPLATFORM eclipse-temurin:21-jre-alpine
 LABEL maintainer="Telegram Media Downloader Team"
 LABEL org.opencontainers.image.title="Telegram Media Downloader"
 LABEL org.opencontainers.image.description="High-performance Telegram media downloader service"
 LABEL org.opencontainers.image.version="1.0"
 LABEL org.opencontainers.image.licenses="MIT"
+# Labels will be set automatically by Docker Buildx
+# LABEL org.opencontainers.image.architecture="$TARGETARCH"
+# LABEL org.opencontainers.image.os="$TARGETOS"
 
 # Install required system packages including FFmpeg for video processing
+# Use platform-specific packages when available
 RUN apk add --no-cache \
     curl \
     openssl \
     tzdata \
     ffmpeg \
     && rm -rf /var/cache/apk/*
+
+# Platform-specific optimizations
+RUN case $(uname -m) in \
+    aarch64) echo "Running on ARM64 architecture" ;; \
+    x86_64) echo "Running on AMD64 architecture" ;; \
+    *) echo "Unknown architecture: $(uname -m)" ;; \
+    esac
 
 # Create non-root user for security
 RUN addgroup -g 1001 -S appuser && \
