@@ -227,6 +227,9 @@ class TelegramMediaDownloader {
             case 'downloaded':
                 this.handleDownloadedMessage(data.items);
                 break;
+            case 'directory_status':
+                this.handleDirectoryStatusChange(data.payload);
+                break;
             default:
                 console.log('未知消息类型:', data.type);
         }
@@ -1112,6 +1115,59 @@ class TelegramMediaDownloader {
             button.innerHTML = button.dataset.originalContent;
             button.disabled = false;
             delete button.dataset.originalContent;
+        }
+    }
+    
+    /**
+     * 检查目录状态
+     */
+    async checkDirectoryStatus() {
+        try {
+            const response = await fetch('/api/directory/status');
+            const result = await response.json();
+            
+            if (result.code === 200) {
+                this.handleDirectoryStatusChange(result.data);
+            }
+        } catch (error) {
+            console.error('检查目录状态失败:', error);
+        }
+    }
+    
+    /**
+     * 处理目录状态变化
+     */
+    handleDirectoryStatusChange(status) {
+        console.log('目录状态变化:', status);
+        
+        const directoryAlert = document.getElementById('directory-alert');
+        
+        if (!status.available) {
+            // 目录不可用
+            if (directoryAlert) {
+                directoryAlert.style.display = 'block';
+                directoryAlert.querySelector('.alert-message').textContent = 
+                    status.message || '下载目录不可访问，请检查U盘或移动硬盘连接';
+            }
+            
+            // 禁用下载按钮
+            const downloadButtons = document.querySelectorAll('[onclick*="download"]');
+            downloadButtons.forEach(btn => {
+                btn.disabled = true;
+                btn.title = '下载目录不可用';
+            });
+        } else {
+            // 目录可用
+            if (directoryAlert) {
+                directoryAlert.style.display = 'none';
+            }
+            
+            // 启用下载按钮
+            const downloadButtons = document.querySelectorAll('[onclick*="download"]');
+            downloadButtons.forEach(btn => {
+                btn.disabled = false;
+                btn.title = '';
+            });
         }
     }
 }

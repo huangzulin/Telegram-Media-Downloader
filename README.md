@@ -16,6 +16,8 @@
 - 🎬 视频缩略图生成
 - 🐳 Docker容器化部署
 - 🔄 多平台支持 (AMD64/ARM64)
+- 💾 U盘/移动硬盘智能支持
+- 🛡️ 目录掉线自动检测与恢复
 
 ## 快速开始
 
@@ -61,11 +63,11 @@ services:
 | 变量名 | 默认值 | 描述 |
 |--------|--------|------|
 | TZ | Asia/Shanghai | 时区设置 |
-| DOWNLOAD_DIR | /app/downloads | 下载目录 |
-| VIDEOS_DIR | /app/downloads/videos | 视频存储目录 |
-| THUMBNAILS_DIR | /app/downloads/thumbnails | 缩略图目录 |
+| DOWNLOAD_DIR | downloads | 下载根目录路径 |
 | APP_ID | 无 | Telegram API App ID (必需) |
 | API_HASH | 无 | Telegram API App Hash (必需) |
+
+**注意**: `DOWNLOAD_DIR` 支持指向U盘或移动硬盘，应用会自动检测设备连接状态并在设备掉线时给出提示。
 
 ### Telegram API 凭据配置
 
@@ -82,6 +84,34 @@ services:
 ## 访问应用
 
 启动后访问: http://localhost:3222
+
+### U盘/移动硬盘使用说明
+
+应用支持将 `DOWNLOAD_DIR` 指向U盘或移动硬盘：
+
+```bash
+# Docker方式
+docker run -d \
+  -v /mnt/usb-drive/downloads:/app/downloads \
+  -e DOWNLOAD_DIR=/app/downloads \
+  huangzulin/telegram-media-downloader:latest
+
+# 或者使用环境变量直接指定
+export DOWNLOAD_DIR=/mnt/usb-drive/downloads
+java -jar telegram-media-downloader.jar
+```
+
+**特性**:
+- ✅ 自动检测U盘/移动硬盘连接状态
+- ✅ 设备掉线时自动暂停下载并提示用户
+- ✅ 设备重新连接后自动恢复下载
+- ✅ 实时监控目录可用性
+- ✅ 前端实时状态显示
+
+**注意事项**:
+- 建议使用稳定的USB接口
+- 避免在下载过程中频繁插拔设备
+- 如遇问题可在Web界面查看详细状态信息
 
 ## 开发
 

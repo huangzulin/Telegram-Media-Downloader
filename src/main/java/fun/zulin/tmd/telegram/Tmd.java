@@ -6,6 +6,7 @@ import cn.hutool.core.util.StrUtil;
 import fun.zulin.tmd.telegram.handler.AuthorizationStateWaitOtherDeviceConfirmationHandler;
 import fun.zulin.tmd.telegram.handler.UpdateFileHandler;
 import fun.zulin.tmd.telegram.handler.UpdateNewMessageHandler;
+import fun.zulin.tmd.utils.DownloadDirectoryManager;
 import fun.zulin.tmd.utils.SpringContext;
 import it.tdlight.Init;
 import it.tdlight.Log;
@@ -20,6 +21,7 @@ import org.springframework.stereotype.Component;
 import java.io.File;
 import java.io.InputStream;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Properties;
 import java.util.concurrent.TimeUnit;
@@ -35,6 +37,8 @@ public class Tmd {
     public static TdApi.Chat savedMessagesChat;
 
     private final static SimpleTelegramClientFactory clientFactory = new SimpleTelegramClientFactory();
+    
+    private DownloadDirectoryManager directoryManager;
 
 
     @EventListener(ApplicationReadyEvent.class)
@@ -94,10 +98,11 @@ public class Tmd {
         APIToken apiToken = new APIToken(appIdInt, apiHash);
         TDLibSettings settings = TDLibSettings.create(apiToken);
 
-        var dataPath = Paths.get("data");
-        Files.createDirectories(dataPath);
-        var downloadsPath = Paths.get("downloads");
-        Files.createDirectories(downloadsPath);
+        // 注入目录管理器
+        directoryManager = SpringContext.getBean(DownloadDirectoryManager.class);
+        
+        var dataPath = Path.of("data");
+        var downloadsPath = directoryManager.getDownloadPath();
         settings.setDatabaseDirectoryPath(dataPath);
         settings.setDownloadedFilesDirectoryPath(downloadsPath);
         settings.setUseTestDatacenter(test);

@@ -1,6 +1,8 @@
 package fun.zulin.tmd.config;
 
 import fun.zulin.tmd.telegram.Tmd;
+import fun.zulin.tmd.utils.DownloadDirectoryManager;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.event.ContextClosedEvent;
 import org.springframework.context.event.EventListener;
@@ -15,7 +17,10 @@ import java.util.concurrent.TimeUnit;
  */
 @Slf4j
 @Component
+@RequiredArgsConstructor
 public class ApplicationShutdownListener {
+    
+    private final DownloadDirectoryManager directoryManager;
 
     @EventListener
     public void onContextClosedEvent(ContextClosedEvent event) {
@@ -34,6 +39,15 @@ public class ApplicationShutdownListener {
                 } catch (Exception e) {
                     log.warn("Telegram客户端关闭超时或出错: {}", e.getMessage());
                 }
+            }
+            
+            // 关闭目录管理器
+            log.info("正在关闭目录管理器...");
+            try {
+                directoryManager.shutdown();
+                log.info("目录管理器已关闭");
+            } catch (Exception e) {
+                log.warn("关闭目录管理器时出现错误: {}", e.getMessage());
             }
             
             log.info("资源清理完成");

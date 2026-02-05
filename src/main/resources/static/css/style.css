@@ -1251,3 +1251,55 @@ body {
 /* 移动端视频库链接样式已移除，保持PC端显示效果 */
 
 /* 超小屏幕样式已移除，保持PC端显示效果 */
+
+/* 目录状态警告样式 */
+.alert {
+    padding: var(--spacing-md);
+    margin-bottom: var(--spacing-lg);
+    border-radius: var(--border-radius);
+    border: 1px solid transparent;
+    position: relative;
+    transition: all var(--transition-normal);
+}
+
+.alert-warning {
+    background-color: #fff3cd;
+    border-color: #ffeaa7;
+    color: #856404;
+}
+
+.alert-content {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+}
+
+.alert-content i {
+    font-size: 1.2rem;
+    color: #d39e00;
+}
+
+.alert-message {
+    font-weight: 500;
+    flex: 1;
+}
+
+/* 响应式警告样式 */
+@media (max-width: 768px) {
+    .alert {
+        padding: var(--spacing-sm);
+        margin-bottom: var(--spacing-md);
+    }
+    
+    .alert-content {
+        gap: var(--spacing-xs);
+    }
+    
+    .alert-content i {
+        font-size: 1rem;
+    }
+    
+    .alert-message {
+        font-size: 0.9rem;
+    }
+}

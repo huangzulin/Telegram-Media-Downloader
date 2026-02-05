@@ -20,7 +20,15 @@ import java.util.UUID;
 @Slf4j
 public class VideoProcessor {
     
-    private static final String THUMBNAILS_DIR = "downloads/thumbnails";
+    private static DownloadDirectoryManager directoryManager;
+    
+    static {
+        try {
+            directoryManager = SpringContext.getBean(DownloadDirectoryManager.class);
+        } catch (Exception e) {
+            log.warn("无法获取目录管理器，使用默认路径", e);
+        }
+    }
     
     /**
      * 截取视频第一帧作为封面图片
@@ -30,7 +38,7 @@ public class VideoProcessor {
     public static String extractFirstFrameAsThumbnail(String videoPath) {
         try {
             // 确保缩略图目录存在
-            Path thumbnailsDir = Paths.get(THUMBNAILS_DIR);
+            Path thumbnailsDir = getThumbnailsPath();
             if (!Files.exists(thumbnailsDir)) {
                 Files.createDirectories(thumbnailsDir);
                 log.info("创建缩略图目录: {}", thumbnailsDir.toAbsolutePath());
@@ -102,7 +110,8 @@ public class VideoProcessor {
         }
         
         try {
-            Path thumbnailPath = Paths.get(THUMBNAILS_DIR, thumbnailFilename);
+            Path thumbnailsDir = getThumbnailsPath();
+            Path thumbnailPath = thumbnailsDir.resolve(thumbnailFilename);
             if (Files.exists(thumbnailPath)) {
                 Files.delete(thumbnailPath);
                 log.info("删除缩略图文件: {}", thumbnailFilename);
@@ -121,7 +130,7 @@ public class VideoProcessor {
      */
     public static int cleanupThumbnails() {
         try {
-            Path thumbnailsDir = Paths.get(THUMBNAILS_DIR);
+            Path thumbnailsDir = getThumbnailsPath();
             if (!Files.exists(thumbnailsDir)) {
                 return 0;
             }
@@ -139,6 +148,18 @@ public class VideoProcessor {
         } catch (Exception e) {
             log.error("清理缩略图文件失败", e);
             return 0;
+        }
+    }
+    
+    /**
+     * 获取缩略图目录路径
+     */
+    private static Path getThumbnailsPath() throws IOException {
+        if (directoryManager != null) {
+            return directoryManager.getThumbnailsPath();
+        } else {
+            // 回退到默认路径
+            return Path.of("downloads/thumbnails");
         }
     }
 }
