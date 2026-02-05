@@ -1,4 +1,4 @@
-package fun.zulin.tmd.controller;
+package fun.zulin.tmd;
 
 import fun.zulin.tmd.common.constant.SystemConstants;
 import org.junit.jupiter.api.Test;

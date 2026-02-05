@@ -111,7 +111,23 @@
             <version>0.7.0</version>
         </dependency>
 
-        <!-- tdlight-natives依赖将通过profiles根据平台自动引入 -->
+        <dependency>
+            <groupId>it.tdlight</groupId>
+            <artifactId>tdlight-natives</artifactId>
+            <classifier>windows_amd64</classifier>
+        </dependency>
+
+        <dependency>
+            <groupId>it.tdlight</groupId>
+            <artifactId>tdlight-natives</artifactId>
+            <classifier>linux_arm64_gnu_ssl3</classifier>
+        </dependency>
+
+        <dependency>
+            <groupId>it.tdlight</groupId>
+            <artifactId>tdlight-natives</artifactId>
+            <classifier>linux_amd64_gnu_ssl3</classifier>
+        </dependency>
     </dependencies>
 
     <dependencyManagement>
@@ -126,20 +142,7 @@
         </dependencies>
     </dependencyManagement>
 
-    <!-- 阿里云Maven镜像配置 -->
     <repositories>
-        <!-- 阿里云公共仓库 -->
-        <repository>
-            <id>aliyunmaven</id>
-            <name>Aliyun Maven</name>
-            <url>https://maven.aliyun.com/repository/public</url>
-        </repository>
-        <!-- 阿里云Spring Boot仓库 -->
-        <repository>
-            <id>aliyun-spring</id>
-            <name>Aliyun Spring</name>
-            <url>https://maven.aliyun.com/repository/spring</url>
-        </repository>
         <repository>
             <id>mchv</id>
             <name>MCHV Apache Maven Packages</name>
@@ -151,67 +154,6 @@
             <url>https://repo.maven.apache.org/maven2/</url>
         </repository>
     </repositories>
-
-    <!-- 阿里云插件仓库 -->
-    <pluginRepositories>
-        <pluginRepository>
-            <id>aliyun-plugin</id>
-            <name>Aliyun Plugin Repository</name>
-            <url>https://maven.aliyun.com/repository/public</url>
-        </pluginRepository>
-    </pluginRepositories>
-
-    <!-- Profiles for different platforms -->
-    <profiles>
-        <profile>
-            <id>linux-x64</id>
-            <activation>
-                <os>
-                    <family>unix</family>
-                    <arch>amd64</arch>
-                </os>
-            </activation>
-            <dependencies>
-                <dependency>
-                    <groupId>it.tdlight</groupId>
-                    <artifactId>tdlight-natives</artifactId>
-                    <classifier>linux_amd64_gnu_ssl3</classifier>
-                </dependency>
-            </dependencies>
-        </profile>
-        <profile>
-            <id>linux-arm64</id>
-            <activation>
-                <os>
-                    <family>unix</family>
-                    <arch>aarch64</arch>
-                </os>
-            </activation>
-            <dependencies>
-                <dependency>
-                    <groupId>it.tdlight</groupId>
-                    <artifactId>tdlight-natives</artifactId>
-                    <classifier>linux_arm64_gnu_ssl3</classifier>
-                </dependency>
-            </dependencies>
-        </profile>
-        <profile>
-            <id>windows-x64</id>
-            <activation>
-                <os>
-                    <family>windows</family>
-                    <arch>amd64</arch>
-                </os>
-            </activation>
-            <dependencies>
-                <dependency>
-                    <groupId>it.tdlight</groupId>
-                    <artifactId>tdlight-natives</artifactId>
-                    <classifier>windows_amd64</classifier>
-                </dependency>
-            </dependencies>
-        </profile>
-    </profiles>
 
     <build>
         <plugins>
@@ -274,7 +216,4 @@
             </plugin>
         </plugins>
     </build>
-
-
-
 </project>

@@ -1,4 +1,4 @@
-package fun.zulin.tmd.telegram;
+package fun.zulin.tmd;
 
 import fun.zulin.tmd.data.item.DownloadItem;
 import fun.zulin.tmd.data.item.DownloadState;
