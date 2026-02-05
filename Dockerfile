@@ -41,12 +41,13 @@ RUN ln -sf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
 
 # Create application directories with proper permissions
 WORKDIR /app
-RUN mkdir -p data downloads/videos downloads/thumbnails downloads/temp logs config \
+RUN mkdir -p data downloads/videos downloads/thumbnails downloads/temp logs config temp \
     && chown -R appuser:appuser /app
 
 # 设置downloads目录权限，确保容器内外都能正常读写
 RUN chmod -R 755 downloads \
-    && chmod 777 downloads/videos downloads/thumbnails downloads/temp
+    && chmod 777 downloads/videos downloads/thumbnails downloads/temp \
+    && chmod 755 temp
 
 # Copy application artifact from builder stage
 COPY --from=builder --chown=appuser:appuser /build/target/*.jar app.jar
@@ -68,16 +69,20 @@ HEALTHCHECK --interval=30s \
     CMD curl -f http://localhost:3222/actuator/health || exit 1
 
 # JVM tuning for containerized environment with cross-platform considerations
+# 添加临时目录设置以解决native library加载问题
 ENV JAVA_OPTS="-Xmx512m -Xms256m \
     -XX:+UseG1GC \
     -XX:MaxGCPauseMillis=200 \
     -XX:+UseContainerSupport \
-    -Djava.security.egd=file:/dev/./urandom"
+    -Djava.security.egd=file:/dev/./urandom \
+    -Djava.io.tmpdir=/app/temp \
+    -Dtdlight.java.natives.path=/app/temp"
 
 # 设置下载目录环境变量，支持自定义挂载路径
 ENV DOWNLOAD_DIR=/app/downloads
 ENV VIDEOS_DIR=/app/downloads/videos
 ENV THUMBNAILS_DIR=/app/downloads/thumbnails
+ENV TEMP_DIR=/app/temp
 
 # Application entrypoint with signal handling
 ENTRYPOINT ["sh", "-c", "java $JAVA_OPTS -jar app.jar"]
