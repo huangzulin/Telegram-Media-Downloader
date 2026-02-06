@@ -90,4 +90,13 @@ public class SystemConstants {
         /** 日志保留天数 */
         public static final int LOG_MAX_HISTORY = 30;
     }
+    
+    /**
+     * 反应下载功能开关
+     * 系统属性: REACTION_DOWNLOAD_ENABLED
+     * 默认值: true (默认启用，无需特别设置)
+     * 设置为 false 可禁用反应下载功能
+     */
+    String REACTION_DOWNLOAD_ENABLED = "REACTION_DOWNLOAD_ENABLED";
+
 }
