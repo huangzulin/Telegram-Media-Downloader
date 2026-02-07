@@ -124,16 +124,6 @@ tmd:
     retry-count: 3
     chunk-size: 1048576  # 1MB
     progress-update-interval: 1000  # 1秒
-  # 反应下载配置 (Reaction Download Configuration)
-  reaction:
-    download:
-      # 是否启用反应下载功能
-      # Enable reaction-based download feature
-      # 默认启用，设置为 false 可禁用此功能
-      # Enabled by default, set to false to disable this feature
-      enabled: ${REACTION_DOWNLOAD_ENABLED:true}
-      delay-ms: 1000  # 处理延迟时间
-      min-reaction-count: 1  # 最少反应数量要求
   storage:
     download-dir: ${DOWNLOAD_DIR:downloads}
     data-dir: ${DATA_DIR:data}

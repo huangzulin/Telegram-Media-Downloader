@@ -20,6 +20,10 @@
     --bg-white: #ffffff;
     --bg-dark: #343a40;
     
+    /* 状态背景色 */
+    --success-bg: #d4edda;
+    --danger-bg: #f8d7da;
+    
     /* 文字颜色 */
     --text-primary: #212529;
     --text-secondary: #6c757d;
@@ -64,7 +68,7 @@ body {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 30px;
+    margin-bottom: 0; /* 移除底部边距 */
     padding: 20px;
     background: var(--bg-white);
     border-radius: var(--border-radius);
@@ -74,7 +78,7 @@ body {
 .header-main {
     display: flex;
     align-items: center;
-    gap: var(--spacing-xl);
+    gap: var(--spacing-md); /* 减小内部元素间距 */
 }
 
 .app-header h1 {
@@ -166,15 +170,7 @@ body {
     font-size: 0.85rem;
 }
 
-.header-actions {
-    display: flex;
-    gap: var(--spacing-sm);
-}
 
-.action-text {
-    display: inline-block;
-    margin-left: var(--spacing-xs);
-}
 
 /* 卡片样式 */
 .card {
@@ -839,21 +835,14 @@ body {
         max-width: 100%;
     }
     
-    /* 移动端头部按钮文字隐藏 */
-    .header-actions .action-text {
-        display: none;
-    }
-    
-    .header-actions .btn i {
-        margin-right: 0;
-    }
+
     
     /* 头部样式参考 video-gallery.html */
     .app-header {
         flex-direction: row;
         gap: 15px;
         padding: 15px;
-        margin-bottom: 20px;
+        margin-bottom: 5px;
     }
     
     .header-main {
@@ -887,10 +876,7 @@ body {
         display: none;
     }
     
-    .header-actions {
-        width: 80px;
-        justify-content: center;
-    }
+
     
     /* 统计区域极致优化 */
     .stats-section {
@@ -1099,7 +1085,7 @@ body {
     
     /* 头部样式参考 video-gallery.html */
     .app-header {
-        padding: 10px 10px 0 10px;
+
     }
     
     .app-header h1 {
@@ -1301,5 +1287,145 @@ body {
     
     .alert-message {
         font-size: 0.9rem;
+    }
+}
+
+/* Telegram链接下载区域样式 */
+.telegram-download-section {
+}
+
+.telegram-download-section .card {
+    background: var(--bg-white);
+    border-radius: var(--border-radius);
+    padding: var(--spacing-lg);
+    box-shadow: var(--box-shadow);
+}
+
+.telegram-download-section h2 {
+    margin-bottom: var(--spacing-md);
+    color: var(--text-primary);
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+}
+
+.telegram-download-section h2 i {
+    color: var(--primary-color);
+}
+
+.telegram-download-form {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-md);
+}
+
+.input-group {
+    display: flex;
+    gap: var(--spacing-sm);
+    align-items: center;
+}
+
+.form-control {
+    flex: 1;
+    padding: var(--spacing-sm) var(--spacing-md);
+    border: 2px solid var(--border-color);
+    border-radius: var(--border-radius);
+    font-size: 1rem;
+    transition: border-color var(--transition-fast);
+}
+
+.form-control:focus {
+    outline: none;
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
+}
+
+.form-control::placeholder {
+    color: var(--text-secondary);
+}
+
+.link-examples {
+    background: var(--bg-light);
+    padding: var(--spacing-sm);
+    border-radius: var(--border-radius);
+    font-size: 0.85rem;
+}
+
+.link-examples small {
+    display: block;
+    margin-bottom: var(--spacing-xs);
+    color: var(--text-secondary);
+    font-weight: 500;
+}
+
+.link-examples code {
+    display: block;
+    background: var(--bg-white);
+    padding: var(--spacing-xs) var(--spacing-sm);
+    border-radius: 4px;
+    margin-bottom: var(--spacing-xs);
+    font-family: 'Courier New', monospace;
+    font-size: 0.8rem;
+    color: var(--primary-color);
+}
+
+.link-examples code:last-child {
+    margin-bottom: 0;
+}
+
+.download-result {
+    padding: var(--spacing-sm);
+    border-radius: var(--border-radius);
+    font-size: 0.9rem;
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+}
+
+.download-result.success {
+    background: var(--success-bg);
+    color: var(--success-color);
+    border: 1px solid var(--success-color);
+}
+
+.download-result.error {
+    background: var(--danger-bg);
+    color: var(--danger-color);
+    border: 1px solid var(--danger-color);
+}
+
+.download-result i {
+    font-size: 1.1rem;
+}
+
+/* 响应式调整 */
+@media (max-width: 768px) {
+    .input-group {
+        flex-direction: row; /* 移动端也保持同行显示 */
+    }
+    
+    .form-control {
+        flex: 1;
+        min-width: 0; /* 允许输入框收缩 */
+    }
+    
+    .telegram-download-section .card {
+        padding: var(--spacing-md);
+    }
+    
+    /* 进一步优化小屏幕显示 */
+    @media (max-width: 480px) {
+        .input-group {
+            gap: var(--spacing-xs);
+        }
+        
+        .form-control {
+            padding: var(--spacing-xs) var(--spacing-sm);
+            font-size: 0.9rem;
+        }
+        
+        .btn span {
+            display: none; /* 小屏幕上只显示图标 */
+        }
     }
 }

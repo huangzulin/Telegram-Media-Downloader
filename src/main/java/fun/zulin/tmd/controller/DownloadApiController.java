@@ -4,6 +4,8 @@ import fun.zulin.tmd.common.exception.ApiResponse;
 import fun.zulin.tmd.data.item.DownloadItem;
 import fun.zulin.tmd.data.item.DownloadItemService;
 import fun.zulin.tmd.telegram.DownloadManage;
+import fun.zulin.tmd.telegram.Tmd;
+import it.tdlight.jni.TdApi;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;
@@ -245,6 +247,77 @@ public class DownloadApiController {
     }
     
     /**
+     * 通过Telegram链接下载视频
+     */
+    @PostMapping("/telegram-link")
+    public ApiResponse<DownloadItem> downloadByTelegramLink(@RequestBody TelegramLinkRequest request) {
+        try {
+            String link = request.getLink();
+            if (link == null || link.trim().isEmpty()) {
+                return ApiResponse.error(400, "链接不能为空");
+            }
+            
+            // 验证链接格式
+            if (!link.toLowerCase().startsWith("https://t.me")) {
+                return ApiResponse.error(400, "请输入有效的Telegram链接");
+            }
+            
+            // 检查Telegram客户端是否就绪
+            if (Tmd.client == null || Tmd.savedMessagesChat == null) {
+                return ApiResponse.error(503, "Telegram客户端未就绪，请先登录");
+            }
+            
+            log.info("收到Telegram链接下载请求: {}", link);
+            
+            // 异步处理链接解析和下载
+            Tmd.client.send(new TdApi.GetMessageLinkInfo(link), res -> {
+                if (res != null && !res.isError()) {
+                    TdApi.MessageLinkInfo linkInfo = res.get();
+                    if (linkInfo != null && linkInfo.message != null) {
+                        // 检查是否为视频消息
+                        if (linkInfo.message.content instanceof TdApi.MessageVideo video) {
+                            log.info("开始下载链接中的视频: {}", link);
+                            // 复用现有的处理逻辑
+                            fun.zulin.tmd.telegram.handler.UpdateNewMessageHandler.processVideoMessage(
+                                linkInfo.message.id, video);
+                        } else {
+                            log.warn("链接指向的消息不是视频类型: {}", 
+                                linkInfo.message.content.getClass().getSimpleName());
+                        }
+                    } else {
+                        log.warn("无法解析链接信息: {}", link);
+                    }
+                } else {
+                    log.error("解析Telegram链接失败: {}", link);
+                }
+            });
+            
+            // 返回成功响应（异步处理）
+            return new ApiResponse<>(200, "已提交下载请求，正在处理中...", null);
+            
+        } catch (Exception e) {
+            log.error("处理Telegram链接下载请求失败: {}", request.getLink(), e);
+            return ApiResponse.error(500, "处理失败: " + e.getMessage());
+        }
+    }
+    
+    /**
+     * Telegram链接请求DTO
+     */
+    public static class TelegramLinkRequest {
+        private String link;
+        
+        // getters and setters
+        public String getLink() {
+            return link;
+        }
+        
+        public void setLink(String link) {
+            this.link = link;
+        }
+    }
+    
+    /**
      * 删除已下载的文件
      * @param item 下载项
      * @return 删除是否成功
@@ -278,3 +351,4 @@ public class DownloadApiController {
         }
     }
 }
+

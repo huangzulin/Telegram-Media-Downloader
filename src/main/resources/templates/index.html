@@ -1,10 +1,11 @@
 <!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Tmd</title>
-    <link rel="stylesheet" href="/css/style.css?v=1.1">
+    <link rel="stylesheet" href="/css/style.css?v=1.2">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
 <body>
@@ -59,15 +60,24 @@
                 </div>
             </section>
 
-            <!-- 下载列表 -->
-            <section class="downloads-section">
-                <div class="section-header">
-                    <div class="filter-tabs">
-                        <button class="tab-btn active" data-filter="downloading">下载中</button>
-                        <button class="tab-btn" data-filter="completed">已完成</button>
+            <!-- Telegram链接下载区域 -->
+            <section class="telegram-download-section">
+                <div class="card">
+                    <div class="telegram-download-form">
+                        <div class="input-group">
+                            <input type="text" id="telegram-link-input" placeholder="请输入Telegram视频链接 (https://t.me/...)" class="form-control">
+                            <button class="btn btn-primary" id="download-link-btn">
+                                <i class="fas fa-download"></i>
+                                <span>下载</span>
+                            </button>
+                        </div>
+                        <div class="download-result" id="download-result" style="display: none;"></div>
                     </div>
                 </div>
+            </section>
 
+            <!-- 下载列表 -->
+            <section class="downloads-section">
                 <div class="downloads-container">
                     <div class="empty-state" id="empty-state">
                         <i class="fas fa-inbox"></i>

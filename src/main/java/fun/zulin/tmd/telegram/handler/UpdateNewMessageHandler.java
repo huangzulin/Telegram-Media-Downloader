@@ -20,21 +20,29 @@ public class UpdateNewMessageHandler {
     public static void accept(TdApi.UpdateNewMessage update) {
 
         var messageContent = update.message.content;
-        var messageId = update.message.id;
+        final long messageId = update.message.id;
         TdApi.Chat savedMessagesChat = Tmd.savedMessagesChat;
 
         if (update.message.chatId != savedMessagesChat.id) {
             return;
         }
 
-        String text = "";
         if (messageContent instanceof TdApi.MessageText messageText) {
             // Get the text of the text message
-            text = messageText.text.text;
+            final String text = messageText.text.text;
             if (Strings.isNotBlank(text) && text.toLowerCase().startsWith("https://t.me")) {
                 Tmd.client.send(new TdApi.GetMessageLinkInfo(text), res -> {
-                    if (res.get().message.content instanceof TdApi.MessageVideo video){
-                        processVideoMessage(messageId, video);
+                    if (res != null && !res.isError()) {
+                        TdApi.MessageLinkInfo linkInfo = res.get();
+                        if (linkInfo != null && linkInfo.message != null && 
+                            linkInfo.message.content instanceof TdApi.MessageVideo video) {
+                            log.info("在saved messages中检测到视频链接: {}", text);
+                            processVideoMessage(messageId, video);
+                        } else {
+                            log.debug("链接指向的消息不是视频类型或无法解析");
+                        }
+                    } else {
+                        log.warn("无法解析链接消息: {}", text);
                     }
                 });
             }
@@ -46,7 +54,7 @@ public class UpdateNewMessageHandler {
 
     }
 
-    private static void processVideoMessage(long messageId, TdApi.MessageVideo video) {
+    public static void processVideoMessage(long messageId, TdApi.MessageVideo video) {
         var service = SpringContext.getBean(DownloadItemServiceImpl.class);
         var uniqueId = video.video.video.remote.uniqueId;
 

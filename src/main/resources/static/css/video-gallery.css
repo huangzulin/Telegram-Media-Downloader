@@ -12,7 +12,7 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 30px;
+    margin-bottom: 5px;
     padding: 20px;
     background: white;
     border-radius: 10px;
@@ -70,10 +70,7 @@
     font-size: 0.85rem;
 }
 
-.header-actions {
-    display: flex;
-    gap: 10px;
-}
+
 
 .btn {
     padding: 10px 20px;
@@ -1120,7 +1117,7 @@
         flex-direction: row;
         gap: 15px;
         padding: 15px;
-        margin-bottom: 20px;
+        margin-bottom: 5px;
     }
     
     .header-main {
@@ -1154,14 +1151,7 @@
         display: none;
     }
     
-    .header-actions {
-        width: 80px;
-        justify-content: center;
-    }
 
-    .return-text {
-        display: none;
-    }
 
     .btn {
         padding: 8px 15px;
@@ -1293,7 +1283,7 @@
     }
     
     .gallery-header {
-        padding: 10px 10px 0 10px;
+
     }
     
     .gallery-header h1 {

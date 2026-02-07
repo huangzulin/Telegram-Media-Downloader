@@ -15,6 +15,7 @@ class TelegramMediaDownloader {
         this.connectWebSocket();
         this.loadInitialData();
         this.startAutoRefresh(); // 启动自动刷新
+        this.bindTelegramLinkEvents(); // 绑定Telegram链接事件
     }
 
     initializeElements() {
@@ -182,15 +183,6 @@ class TelegramMediaDownloader {
                     this.handleDownloadingMessage(data);
                 } catch (error) {
                     console.error('解析下载中消息失败:', error);
-                }
-            });
-            
-            this.stompClient.subscribe('/topic/downloaded', (message) => {
-                try {
-                    const data = JSON.parse(message.body);
-                    this.handleDownloadedMessage(data);
-                } catch (error) {
-                    console.error('解析已完成消息失败:', error);
                 }
             });
         }
@@ -645,19 +637,10 @@ class TelegramMediaDownloader {
     }
 
     filterItems(items, filter) {
-        switch (filter) {
-            case 'downloading':
-                return items.filter(item => 
-                    item.state === 'Downloading' || item.state === 'Created'
-                );
-            case 'completed':
-                return items.filter(item => item.state === 'Complete');
-            default:
-                // 默认显示下载中的项目
-                return items.filter(item => 
-                    item.state === 'Downloading' || item.state === 'Created'
-                );
-        }
+        // 只显示下载中的项目
+        return items.filter(item => 
+            item.state === 'Downloading' || item.state === 'Created'
+        );
     }
 
     createDownloadItemElement(item) {
@@ -1101,7 +1084,103 @@ class TelegramMediaDownloader {
         }
     }
 
-
+    bindTelegramLinkEvents() {
+        const downloadBtn = document.getElementById('download-link-btn');
+        const linkInput = document.getElementById('telegram-link-input');
+        const resultDiv = document.getElementById('download-result');
+        
+        if (downloadBtn && linkInput) {
+            // 点击下载按钮
+            downloadBtn.addEventListener('click', () => {
+                this.handleTelegramLinkDownload();
+            });
+            
+            // 回车键触发下载
+            linkInput.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') {
+                    this.handleTelegramLinkDownload();
+                }
+            });
+            
+            // 输入框内容变化时隐藏结果提示
+            linkInput.addEventListener('input', () => {
+                if (resultDiv.style.display !== 'none') {
+                    resultDiv.style.display = 'none';
+                }
+            });
+        }
+    }
+    
+    async handleTelegramLinkDownload() {
+        const linkInput = document.getElementById('telegram-link-input');
+        const downloadBtn = document.getElementById('download-link-btn');
+        const resultDiv = document.getElementById('download-result');
+        
+        const link = linkInput.value.trim();
+        
+        // 验证输入
+        if (!link) {
+            this.showDownloadResult('请输入Telegram链接', 'error');
+            linkInput.focus();
+            return;
+        }
+        
+        // 验证链接格式
+        if (!link.toLowerCase().startsWith('https://t.me')) {
+            this.showDownloadResult('请输入有效的Telegram链接 (以 https://t.me 开头)', 'error');
+            return;
+        }
+        
+        // 显示加载状态
+        downloadBtn.disabled = true;
+        downloadBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i><span>处理中...</span>';
+        resultDiv.style.display = 'none';
+        
+        try {
+            // 调用API
+            const response = await fetch('/api/downloads/telegram-link', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ link: link })
+            });
+            
+            const result = await response.json();
+            
+            if (response.ok && result.code === 200) {
+                this.showDownloadResult('下载请求已提交，正在处理中...', 'success');
+                linkInput.value = ''; // 清空输入框
+                
+                // 5秒后自动隐藏成功提示
+                setTimeout(() => {
+                    resultDiv.style.display = 'none';
+                }, 5000);
+            } else {
+                this.showDownloadResult(result.message || '下载请求失败', 'error');
+            }
+            
+        } catch (error) {
+            console.error('下载请求失败:', error);
+            this.showDownloadResult('网络错误，请稍后重试', 'error');
+        } finally {
+            // 恢复按钮状态
+            downloadBtn.disabled = false;
+            downloadBtn.innerHTML = '<i class="fas fa-download"></i><span>下载</span>';
+        }
+    }
+    
+    showDownloadResult(message, type) {
+        const resultDiv = document.getElementById('download-result');
+        if (resultDiv) {
+            resultDiv.className = `download-result ${type}`;
+            resultDiv.innerHTML = `
+                <i class="fas ${type === 'success' ? 'fa-check-circle' : 'fa-exclamation-circle'}"></i>
+                <span>${message}</span>
+            `;
+            resultDiv.style.display = 'flex';
+        }
+    }
 
     showLoading(button) {
         const originalContent = button.innerHTML;

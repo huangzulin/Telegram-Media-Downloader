@@ -17,16 +17,17 @@ import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.context.event.EventListener;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Component;
+import lombok.extern.slf4j.Slf4j;
 
 import java.io.File;
 import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.Properties;
 import java.util.concurrent.TimeUnit;
 
 
+@Slf4j
 @Component
 public class Tmd {
 
@@ -42,7 +43,8 @@ public class Tmd {
 
 
     @EventListener(ApplicationReadyEvent.class)
-    public void init() throws Exception {
+    public void init() {
+        try {
 
         Init.init();
         Log.setLogMessageHandler(1, new Slf4JLogMessageHandler());
@@ -58,15 +60,15 @@ public class Tmd {
                 try (InputStream inputStream = Files.newInputStream(envFile.toPath())) {
                     props.load(inputStream);
                     envFileLoaded = true;
-                    System.out.println("成功从项目根目录加载.env文件");
+                    log.info("成功从项目根目录加载.env文件");
                 }
             }
         } catch (Exception e) {
-            System.err.println("加载.env文件时出现错误: " + e.getMessage());
+            log.warn("加载.env文件时出现错误: {}", e.getMessage());
         }
         
         if (!envFileLoaded) {
-            System.err.println(".env文件未找到，将使用环境变量");
+            log.warn(".env文件未找到，将使用环境变量");
         }
         
         var appId = StrUtil.blankToDefault(props.getProperty("APP_ID"), System.getenv("APP_ID"));
@@ -85,7 +87,7 @@ public class Tmd {
             }
         } else {
             // 测试模式下使用默认值或跳过Telegram初始化
-            System.out.println("运行在测试模式下，跳过Telegram客户端初始化");
+            log.info("运行在测试模式下，跳过Telegram客户端初始化");
             return; // 直接返回，不初始化Telegram客户端
         }
         
@@ -115,6 +117,7 @@ public class Tmd {
         clientBuilder.addUpdateHandler(TdApi.UpdateAuthorizationState.class, this::onUpdateAuthorizationState);
         clientBuilder.addUpdateHandler(TdApi.UpdateNewMessage.class, UpdateNewMessageHandler::accept);
         clientBuilder.addUpdateHandler(TdApi.UpdateFile.class, UpdateFileHandler::accept);
+        
 
         var clientInteraction = new QrCodeClientInteraction();
 
@@ -132,23 +135,28 @@ public class Tmd {
             //开始下载未完成任务
             DownloadManage.startDownloading();
         }
-
+        
+        } catch (Exception e) {
+            log.error("Telegram客户端初始化失败: {}", e.getMessage(), e);
+            // 不抛出异常，让应用能够继续启动
+            // 可以在这里添加降级处理逻辑
+        }
     }
 
     private void onUpdateAuthorizationState(TdApi.UpdateAuthorizationState update) {
         TdApi.AuthorizationState authorizationState = update.authorizationState;
         if (authorizationState instanceof TdApi.AuthorizationStateReady) {
-            System.out.println("Logged in");
+            log.info("Logged in");
 
             var simpMessagingTemplate = SpringContext.getBean(SimpMessagingTemplate.class);
             simpMessagingTemplate.convertAndSend("/topic/auth", "ok");
 
         } else if (authorizationState instanceof TdApi.AuthorizationStateClosing) {
-            System.out.println("Closing...");
+            log.info("Closing...");
         } else if (authorizationState instanceof TdApi.AuthorizationStateClosed) {
-            System.out.println("Closed");
+            log.info("Closed");
         } else if (authorizationState instanceof TdApi.AuthorizationStateLoggingOut) {
-            System.out.println("Logging out...");
+            log.info("Logging out...");
         }
     }
 
