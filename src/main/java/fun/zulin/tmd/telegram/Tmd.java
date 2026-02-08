@@ -146,17 +146,28 @@ public class Tmd {
     private void onUpdateAuthorizationState(TdApi.UpdateAuthorizationState update) {
         TdApi.AuthorizationState authorizationState = update.authorizationState;
         if (authorizationState instanceof TdApi.AuthorizationStateReady) {
-            log.info("Logged in");
+            log.info("[🐛 DEBUG] Telegram认证状态: 已就绪");
+            log.info("[🐛 DEBUG] 准备发送 /topic/auth 消息");
 
-            var simpMessagingTemplate = SpringContext.getBean(SimpMessagingTemplate.class);
-            simpMessagingTemplate.convertAndSend("/topic/auth", "ok");
+            try {
+                var simpMessagingTemplate = SpringContext.getBean(SimpMessagingTemplate.class);
+                log.info("[🐛 DEBUG] 获取SimpMessagingTemplate成功");
+                
+                simpMessagingTemplate.convertAndSend("/topic/auth", "ok");
+                log.info("[🐛 DEBUG] 已发送 /topic/auth 消息: ok");
+                
+            } catch (Exception e) {
+                log.error("[🐛 DEBUG] 发送 /topic/auth 消息失败: {}", e.getMessage(), e);
+            }
 
         } else if (authorizationState instanceof TdApi.AuthorizationStateClosing) {
-            log.info("Closing...");
+            log.info("[🐛 DEBUG] Telegram认证状态: 关闭中");
         } else if (authorizationState instanceof TdApi.AuthorizationStateClosed) {
-            log.info("Closed");
+            log.info("[🐛 DEBUG] Telegram认证状态: 已关闭");
         } else if (authorizationState instanceof TdApi.AuthorizationStateLoggingOut) {
-            log.info("Logging out...");
+            log.info("[🐛 DEBUG] Telegram认证状态: 登出中");
+        } else {
+            log.info("[🐛 DEBUG] Telegram认证状态: {}", authorizationState.getClass().getSimpleName());
         }
     }
 

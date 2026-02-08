@@ -12,6 +12,7 @@ class TelegramMediaDownloader {
         
         this.initializeElements();
         this.bindEvents();
+        this.checkInitialAuthStatus(); // 进入页面时首先检查认证状态
         this.connectWebSocket();
         this.loadInitialData();
         this.startAutoRefresh(); // 启动自动刷新
@@ -436,11 +437,54 @@ class TelegramMediaDownloader {
         }
     }
 
+    async checkInitialAuthStatus() {
+        try {
+            console.log('开始检查初始认证状态');
+            
+            // 调用健康检查API获取认证状态
+            const healthResponse = await fetch('/api/health');
+            if (healthResponse && healthResponse.ok) {
+                const healthData = await healthResponse.json();
+                console.log('健康检查响应:', healthData);
+                
+                // 检查认证状态
+                const userLoggedIn = healthData.data?.userLoggedIn || false;
+                console.log('用户认证状态:', userLoggedIn);
+                
+                if (userLoggedIn) {
+                    // 用户已认证
+                    this.isAuthenticated = true;
+                    this.loginSection.style.display = 'none';
+                    this.updateAuthStatus(true);
+                    console.log('用户已认证，隐藏登录区域');
+                } else {
+                    // 用户未认证
+                    this.isAuthenticated = false;
+                    this.loginSection.style.display = 'block';
+                    this.updateAuthStatus(false);
+                    console.log('用户未认证，显示登录区域');
+                }
+            } else {
+                console.warn('健康检查API调用失败，状态码:', healthResponse?.status);
+                // API调用失败时，默认显示登录区域
+                this.isAuthenticated = false;
+                this.loginSection.style.display = 'block';
+                this.updateAuthStatus(false);
+            }
+        } catch (error) {
+            console.error('检查初始认证状态失败:', error);
+            // 发生错误时，默认显示登录区域
+            this.isAuthenticated = false;
+            this.loginSection.style.display = 'block';
+            this.updateAuthStatus(false);
+        }
+    }
+
     async loadInitialData() {
         try {
             // 只加载进行中的下载项，不加载已完成的数据
             const downloadingResponse = await fetch('/api/downloads/downloading');
-            if (downloadingResponse.ok) {
+            if (downloadingResponse && downloadingResponse.ok) {
                 const response = await downloadingResponse.json();
                 // 确保数据是数组格式
                 if (response && response.data && Array.isArray(response.data)) {
@@ -845,28 +889,15 @@ class TelegramMediaDownloader {
     async smartRefreshDownloadStatus() {
         try {
             // 并行获取下载状态，提高效率
-            const [completedResponse, downloadingResponse] = await Promise.all([
-                fetch('/api/downloads/completed'),
+            const [, downloadingResponse] = await Promise.all([
                 fetch('/api/downloads/downloading')
             ]);
 
-            let newCompletedItems = [];
             let newDownloadingItems = [];
 
-            // 处理已完成的下载项
-            if (completedResponse.ok) {
-                const response = await completedResponse.json();
-                if (response && response.data && Array.isArray(response.data)) {
-                    newCompletedItems = response.data;
-                } else if (Array.isArray(response)) {
-                    newCompletedItems = response;
-                } else {
-                    newCompletedItems = [];
-                }
-            }
 
             // 处理进行中的下载项
-            if (downloadingResponse.ok) {
+            if (downloadingResponse && downloadingResponse.ok) {
                 const response = await downloadingResponse.json();
                 if (response && response.data && Array.isArray(response.data)) {
                     newDownloadingItems = response.data;
@@ -878,14 +909,13 @@ class TelegramMediaDownloader {
             }
 
             // 精确检查数据是否发生变化
-            const newDataHash = this.calculatePreciseDataHash(newCompletedItems, newDownloadingItems);
+            const newDataHash = this.calculatePreciseDataHash(newDownloadingItems);
             
             if (newDataHash !== this.lastDataHash) {
                 console.log('检测到数据变化，更新UI');
                 this.lastDataHash = newDataHash;
                 
                 // 更新数据
-                this.completedItems = newCompletedItems;
                 this.downloadingItems = newDownloadingItems;
                 
                 // 智能更新UI
@@ -899,9 +929,8 @@ class TelegramMediaDownloader {
     }
     
     // 计算精确数据哈希值用于比较
-    calculatePreciseDataHash(completedItems, downloadingItems) {
+    calculatePreciseDataHash(downloadingItems) {
         // 确保参数是数组
-        if (!Array.isArray(completedItems)) completedItems = [];
         if (!Array.isArray(downloadingItems)) downloadingItems = [];
         
         // 考虑所有关键字段：uniqueId, state, progress, fileSize, downloadedSize
@@ -910,7 +939,7 @@ class TelegramMediaDownloader {
                 `${item.uniqueId}|${item.state}|${Math.floor(item.progress || 0)}|${item.fileSize}|${item.downloadedSize}`
             ).sort().join(';;');
         
-        return keyFields(completedItems) + '||' + keyFields(downloadingItems);
+        return keyFields(downloadingItems);
     }
     
     // 智能更新UI - 只更新有变化的部分
@@ -919,68 +948,7 @@ class TelegramMediaDownloader {
         this.renderDownloads();
     }
 
-    // 仅刷新下载状态的方法
-    async refreshDownloadStatus() {
-        try {
-            // 并行获取下载状态，提高效率
-            const [completedResponse, downloadingResponse] = await Promise.all([
-                fetch('/api/downloads/completed'),
-                fetch('/api/downloads/downloading')
-            ]);
 
-            // 处理已完成的下载项
-            if (completedResponse.ok) {
-                const response = await completedResponse.json();
-                if (response && response.data && Array.isArray(response.data)) {
-                    this.completedItems = response.data;
-                } else if (Array.isArray(response)) {
-                    this.completedItems = response;
-                } else {
-                    this.completedItems = [];
-                }
-            }
-
-            // 处理进行中的下载项
-            if (downloadingResponse.ok) {
-                const response = await downloadingResponse.json();
-                if (response && response.data && Array.isArray(response.data)) {
-                    this.downloadingItems = response.data;
-                } else if (Array.isArray(response)) {
-                    this.downloadingItems = response;
-                } else {
-                    this.downloadingItems = [];
-                }
-            }
-
-            // 更新UI
-            this.updateDownloadStats();
-            this.renderDownloads();
-
-        } catch (error) {
-            console.error('刷新下载状态失败:', error);
-        }
-    }
-
-    async clearCompleted() {
-        try {
-            const response = await fetch('/api/downloads/clear-completed', {
-                method: 'POST'
-            });
-            
-            if (response.ok) {
-                this.completedItems = [];
-                this.updateDownloadStats();
-                this.renderDownloads();
-                console.log('已完成任务已清理');
-            } else {
-                throw new Error('清理失败');
-            }
-        } catch (error) {
-            console.error('清理失败: ' + error.message);
-        }
-    }
-
-    // pauseAllDownloads 方法已移除
 
     async pauseDownload(uniqueId) {
         try {

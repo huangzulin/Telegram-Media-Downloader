@@ -22,6 +22,11 @@ public class UpdateNewMessageHandler {
         var messageContent = update.message.content;
         final long messageId = update.message.id;
 
+        TdApi.Chat savedMessagesChat = Tmd.savedMessagesChat;
+        if (update.message.chatId != savedMessagesChat.id) {
+            return;
+        }
+
         if (messageContent instanceof TdApi.MessageText messageText) {
             // Get the text of the text message
             final String text = messageText.text.text;
@@ -29,8 +34,8 @@ public class UpdateNewMessageHandler {
                 Tmd.client.send(new TdApi.GetMessageLinkInfo(text), res -> {
                     if (res != null && !res.isError()) {
                         TdApi.MessageLinkInfo linkInfo = res.get();
-                        if (linkInfo != null && linkInfo.message != null && 
-                            linkInfo.message.content instanceof TdApi.MessageVideo video) {
+                        if (linkInfo != null && linkInfo.message != null &&
+                                linkInfo.message.content instanceof TdApi.MessageVideo video) {
                             log.info("在saved messages中检测到视频链接: {}", text);
                             processVideoMessage(messageId, video, linkInfo.chatId);
                         } else {
@@ -43,7 +48,7 @@ public class UpdateNewMessageHandler {
             }
         } else {
             if (messageContent instanceof TdApi.MessageVideo video) {
-                processVideoMessage(messageId, video, update.message.chatId);
+                processVideoMessage(messageId, video, savedMessagesChat.id);
             }
         }
 
@@ -60,7 +65,7 @@ public class UpdateNewMessageHandler {
         // 获取原始文件名作为描述
         String originalFilename = video.video.fileName;
         String captionText = video.caption.text;
-        
+
         // 构造完整的描述信息
         StringBuilder descriptionBuilder = new StringBuilder();
         if (captionText != null && !captionText.trim().isEmpty()) {
@@ -72,14 +77,14 @@ public class UpdateNewMessageHandler {
             }
             descriptionBuilder.append(originalFilename.trim());
         }
-        
+
         String description = descriptionBuilder.toString();
         if (description.isEmpty()) {
             description = "Unnamed Video";
         }
-        
+
         // 不再处理Telegram缩略图，直接使用本地生成
-        
+
         // 先保存获取数据库ID
         item = DownloadItem.builder()
                 .description(description)  // 原始描述，包含特殊字符
@@ -95,7 +100,7 @@ public class UpdateNewMessageHandler {
                 .state(DownloadState.Created.name())
                 .build();
         service.save(item);
-        
+
         // 使用数据库ID作为文件名
         String idBasedFilename = generateIdBasedFilename(item, originalFilename);
         item.setFilename(idBasedFilename);
@@ -105,16 +110,17 @@ public class UpdateNewMessageHandler {
         // 下载视频
         DownloadManage.download(item);
     }
-    
+
     /**
      * 使用数据库ID生成文件名
-     * @param item 下载项
+     *
+     * @param item             下载项
      * @param originalFilename 原始文件名
      * @return ID-based文件名
      */
     private static String generateIdBasedFilename(DownloadItem item, String originalFilename) {
         Objects.requireNonNull(item.getId(), "数据库ID不能为空");
-        
+
         // 获取文件扩展名
         String extension = ".mp4"; // 默认扩展名
         if (originalFilename != null && !originalFilename.trim().isEmpty()) {
@@ -123,7 +129,7 @@ public class UpdateNewMessageHandler {
                 extension = originalFilename.substring(lastDotIndex);
             }
         }
-        
+
         // 使用数据库ID作为文件名
         return item.getId() + extension;
     }
