@@ -518,18 +518,24 @@ class VideoGallery {
         let thumbnailHtml = '';
         if (video.thumbnail) {
             thumbnailHtml = `
-                <div class="video-thumbnail">
+                <div class="video-thumbnail" onclick="gallery.playVideo('${encodeURIComponent(video.filename)}', '${encodeURIComponent(displayName)}')">
                     <img src="/downloads/thumbnails/${video.thumbnail}" 
                          alt="${this.escapeHtml(displayName)}" 
                          class="thumbnail-image"
                          onerror="this.parentElement.innerHTML='<div class=\\'thumbnail-placeholder\\'><i class=\\'fas fa-video\\'></i></div>'">
+                    <div class="play-overlay">
+                        <i class="fas fa-play-circle"></i>
+                    </div>
                 </div>
             `;
         } else {
             thumbnailHtml = `
-                <div class="video-thumbnail">
+                <div class="video-thumbnail" onclick="gallery.playVideo('${encodeURIComponent(video.filename)}', '${encodeURIComponent(displayName)}')">
                     <div class="thumbnail-placeholder">
                         <i class="fas fa-video"></i>
+                    </div>
+                    <div class="play-overlay">
+                        <i class="fas fa-play-circle"></i>
                     </div>
                 </div>
             `;
