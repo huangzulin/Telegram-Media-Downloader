@@ -9,6 +9,7 @@ import fun.zulin.tmd.telegram.DownloadManage;
 import fun.zulin.tmd.telegram.Tmd;
 import fun.zulin.tmd.utils.SpringContext;
 import fun.zulin.tmd.utils.DataCleanupUtil;
+import fun.zulin.tmd.utils.TelegramChatIdUtils;
 import it.tdlight.jni.TdApi;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -580,10 +581,13 @@ public class DownloadApiController {
 
                         // 检查消息内容类型
                         if (linkInfo.message.content instanceof TdApi.MessageVideo video) {
-                            log.info("[🐛 DEBUG] 发现视频链接 {}: {}", link, video.video.fileName);
-                            // 复用现有的视频处理逻辑
+                            // 规范化chatId格式
+                            long normalizedChatId = TelegramChatIdUtils.normalizeChatId(linkInfo.chatId);
+                            log.info("[🐛 DEBUG] 发现视频链接 {}: {}, 原始Chat ID: {}, 规范化后: {}", 
+                                   link, video.video.fileName, linkInfo.chatId, normalizedChatId);
+                            // 复用现有的视频处理逻辑，使用规范化后的chatId
                             fun.zulin.tmd.telegram.handler.UpdateNewMessageHandler.processVideoMessage(
-                                    messageId, video, linkInfo.chatId);
+                                    messageId, video, normalizedChatId);
                             onSuccess.run();
                         } else if (linkInfo.message.content instanceof TdApi.MessageDocument document) {
                             log.info("[🐛 DEBUG] 发现文档链接 {}: {}", link, document.document.fileName);
