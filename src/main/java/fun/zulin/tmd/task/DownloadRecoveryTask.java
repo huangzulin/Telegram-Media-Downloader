@@ -43,6 +43,15 @@ public class DownloadRecoveryTask {
             // 检查数据库中是否有未完成的任务（包括Failed状态的任务）
             var service = SpringContext.getBean(DownloadItemServiceImpl.class);
             var failedTasks = service.getFailedItemsFromDB();
+            
+            // 过滤掉已经在下载队列中的失败任务
+            if (failedTasks != null && !failedTasks.isEmpty()) {
+                failedTasks = failedTasks.stream()
+                    .filter(task -> !DownloadManage.isItemInDownloadingQueue(task.getUniqueId()))
+                    .collect(java.util.stream.Collectors.toList());
+                log.debug("过滤后的失败任务数: {}", failedTasks.size());
+            }
+            
             int pendingTasks = DownloadManage.getItems().size();
             
             if (pendingTasks > 0) {
@@ -67,13 +76,20 @@ public class DownloadRecoveryTask {
         try {
             var service = SpringContext.getBean(DownloadItemServiceImpl.class);
             
-            // 筛选出可以重试的任务（比如下载计数较少的）
+            // 筛选出可以重试的任务（比如下载计数较少的），并且不在当前下载队列中
             failedTasks.stream()
                 .filter(item -> item.getDownloadCount() != null && item.getDownloadCount() < 3)
+                .filter(item -> !DownloadManage.isItemInDownloadingQueue(item.getUniqueId()))
                 .forEach(item -> {
                     try {
-                        log.info("尝试恢复失败任务: {} (失败次数: {})", 
-                            item.getFilename(), item.getDownloadCount());
+                        // 再次检查，防止并发情况下的重复添加
+                        if (DownloadManage.isItemInDownloadingQueue(item.getUniqueId())) {
+                            log.debug("任务 {} 已在下载队列中，跳过恢复", item.getUniqueId());
+                            return;
+                        }
+                        
+                        log.info("尝试恢复失败任务: {} (失败次数: {}, UniqueId: {})", 
+                            item.getFilename(), item.getDownloadCount(), item.getUniqueId());
                         
                         // 将状态改为Created，允许重新下载
                         item.setState(DownloadState.Created.name());

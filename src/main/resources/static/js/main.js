@@ -639,10 +639,8 @@ class TelegramMediaDownloader {
     }
 
     renderDownloads() {
-        const allItems = [...this.downloadingItems, ...this.completedItems];
-        const filteredItems = this.filterItems(allItems, this.currentFilter);
-        
-        if (filteredItems.length === 0) {
+
+        if (this.downloadingItems.length === 0) {
             this.downloadsList.style.display = 'none';
             this.emptyState.style.display = 'block';
             return;
@@ -651,7 +649,7 @@ class TelegramMediaDownloader {
         this.emptyState.style.display = 'none';
         this.downloadsList.style.display = 'block';
         
-        this.downloadsList.innerHTML = filteredItems.map(item => 
+        this.downloadsList.innerHTML = this.downloadingItems.map(item =>
             this.createDownloadItemElement(item)
         ).join('');
     }
