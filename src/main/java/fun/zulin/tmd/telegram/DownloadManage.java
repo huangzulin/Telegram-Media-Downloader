@@ -22,6 +22,7 @@ import java.util.List;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 @Slf4j
 public class DownloadManage {
@@ -40,6 +41,9 @@ public class DownloadManage {
     
     /** 下载信号量，控制并发数 */
     private static final Semaphore downloadSemaphore = new Semaphore(MAX_CONCURRENT_DOWNLOADS);
+    
+    /** 状态变更监听器列表 */
+    private static final List<StateChangeListener> stateChangeListeners = new CopyOnWriteArrayList<>();
 
     public static List<DownloadItem> getItems() {
         synchronized (downloadingItems) {
@@ -61,6 +65,48 @@ public class DownloadManage {
         return MAX_CONCURRENT_DOWNLOADS;
     }
 
+    /**
+     * 状态变更监听器接口
+     */
+    public interface StateChangeListener {
+        void onStateChanged(DownloadItem item, String oldState, String newState);
+    }
+    
+    /**
+     * 添加状态变更监听器
+     */
+    public static void addListener(StateChangeListener listener) {
+        if (listener != null) {
+            stateChangeListeners.add(listener);
+            log.debug("添加状态监听器，当前监听器数量: {}", stateChangeListeners.size());
+        }
+    }
+    
+    /**
+     * 移除状态变更监听器
+     */
+    public static void removeListener(StateChangeListener listener) {
+        if (listener != null) {
+            stateChangeListeners.remove(listener);
+            log.debug("移除状态监听器，当前监听器数量: {}", stateChangeListeners.size());
+        }
+    }
+    
+    /**
+     * 触发状态变更事件
+     */
+    private static void fireStateChanged(DownloadItem item, String oldState, String newState) {
+        if (!stateChangeListeners.isEmpty()) {
+            for (StateChangeListener listener : stateChangeListeners) {
+                try {
+                    listener.onStateChanged(item, oldState, newState);
+                } catch (Exception e) {
+                    log.error("状态变更监听器执行异常", e);
+                }
+            }
+        }
+    }
+    
     /**
      * 下载文件
      *
@@ -90,9 +136,13 @@ public class DownloadManage {
                     var service = SpringContext.getBean(DownloadItemServiceImpl.class);
                     var saveItem = service.getByUniqueId(item.getUniqueId());
                     if (saveItem != null && !DownloadState.Downloading.name().equals(saveItem.getState())) {
+                        String oldState = saveItem.getState();
                         saveItem.setState(DownloadState.Downloading.name());
                         service.updateById(saveItem);
                         log.info("更新下载项状态为下载中: {}", item.getFilename());
+                        
+                        // 触发状态变更事件
+                        fireStateChanged(saveItem, oldState, saveItem.getState());
                         
                         // 立即推送状态更新
                         pushStateUpdate(saveItem);
@@ -113,10 +163,16 @@ public class DownloadManage {
                             
                             // 执行文件重命名操作
                             boolean renameSuccess = renameDownloadedFile(saveItem, result.get().local.path);
+                            
+                            if (!renameSuccess) {
+                                log.error("文件重命名失败，不更新完成状态: {}", saveItem.getFilename());
+                                handleDownloadError(saveItem, "文件重命名失败");
+                                return;
+                            }
 
                             // 如果是视频文件，直接生成本地截图作为缩略图
                             String thumbnailFilename = null;
-                            if (renameSuccess && isVideoFile(saveItem.getFilename())) {
+                            if (isVideoFile(saveItem.getFilename())) {
                                 log.info("开始生成视频 {} 的缩略图", saveItem.getFilename());
                                 thumbnailFilename = generateVideoThumbnail(saveItem);
                                 if (thumbnailFilename != null) {
@@ -127,12 +183,33 @@ public class DownloadManage {
                                 }
                             }
 
+                            // 确认文件确实存在后再更新完成状态
+                            Path finalFilePath = Paths.get("downloads/videos/" + saveItem.getFilename());
+                            if (!Files.exists(finalFilePath)) {
+                                log.error("下载完成但文件不存在，不更新状态: {}", finalFilePath);
+                                handleDownloadError(saveItem, "文件未正确保存到目标位置");
+                                return;
+                            }
+
                             // 更新下载完成状态
+                            String oldState = saveItem.getState();
                             saveItem.setState(DownloadState.Complete.name());
                             saveItem.setDownloadedSize(result.get().size);
                             saveItem.setProgress(100.0f);
-                            service.updateById(saveItem);
+                            saveItem.setCompleteTime(LocalDateTime.now(ZoneId.of("Asia/Shanghai")));
+                            
+                            boolean updateSuccess = service.updateById(saveItem);
+                            if (!updateSuccess) {
+                                log.error("更新下载完成状态失败: {}", saveItem.getFilename());
+                                return;
+                            }
+                            
+                            log.info("成功更新下载完成状态: {} (重命名: {}) 文件大小: {} bytes", 
+                                saveItem.getFilename(), renameSuccess, result.get().size);
 
+                            // 触发状态变更事件
+                            fireStateChanged(saveItem, oldState, saveItem.getState());
+                            
                             // 推送状态更新
                             pushStateUpdate(saveItem);
 
@@ -290,16 +367,36 @@ public class DownloadManage {
         
         try {
             var service = SpringContext.getBean(DownloadItemServiceImpl.class);
+            
+            // 添加详细调试信息
+            log.info("=== 开始查询未完成任务 ===");
+            
+            // 先查询所有任务状态分布
+            var allItems = service.list();
+            log.info("数据库中总任务数: {}", allItems.size());
+            allItems.forEach(item -> 
+                log.info("任务状态详情 - ID: {}, 文件名: {}, 状态: {}, UniqueId: {}", 
+                    item.getId(), item.getFilename(), item.getState(), item.getUniqueId()));
+            
             var items = service.getDownloadingItemsFromDB();
+            log.info("查询到的未完成任务数: {}", items.size());
+            
+            if (items == null || items.isEmpty()) {
+                log.info("没有发现未完成的下载任务");
+                return;
+            }
+            
             downloadingItems = CollectionUtil.emptyIfNull(items);
             
             log.info("发现 {} 个未完成的下载任务，开始恢复...", downloadingItems.size());
             
             downloadingItems.forEach(item -> {
-                log.info("恢复下载任务: {} ({})", item.getFilename(), item.getUniqueId());
+                log.info("恢复下载任务: {} ({}) 状态: {}", 
+                    item.getFilename(), item.getUniqueId(), item.getState());
                 
                 // 检查消息是否存在
-                Tmd.client.send(new TdApi.GetMessage(Tmd.savedMessagesChat.id, item.getMassageId()), message -> {
+                long targetChatId = item.getChatId() != null ? item.getChatId() : Tmd.savedMessagesChat.id;
+                Tmd.client.send(new TdApi.GetMessage(targetChatId, item.getMassageId()), message -> {
                     if (message.isError()) {
                         log.error("获取消息失败 {}: {}", item.getUniqueId(), message.getError().message);
                         handleDownloadError(item, "消息不存在或已被删除");
@@ -310,7 +407,15 @@ public class DownloadManage {
                     if (message.get().content instanceof TdApi.MessageVideo video) {
                         var fileId = video.video.video.id;
                         item.setFileId(fileId);
-                        DownloadManage.download(item);
+                        
+                        // 根据状态决定是否重新开始下载
+                        if (DownloadState.Created.name().equals(item.getState()) || 
+                            DownloadState.Pause.name().equals(item.getState())) {
+                            log.info("重新开始下载任务: {} ({})", item.getFilename(), item.getUniqueId());
+                            DownloadManage.download(item);
+                        } else if (DownloadState.Downloading.name().equals(item.getState())) {
+                            log.info("任务已在下载中: {} ({})，跳过重复启动", item.getFilename(), item.getUniqueId());
+                        }
                     } else {
                         log.warn("消息内容不是视频类型 {}: {}", item.getUniqueId(), 
                                 message.get().content.getClass().getSimpleName());

@@ -1,5 +1,4 @@
 <!DOCTYPE html>
-<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
@@ -60,18 +59,74 @@
                 </div>
             </section>
 
-            <!-- Telegram链接下载区域 -->
-            <section class="telegram-download-section">
+            <!-- 下载操作区域 -->
+            <section class="download-actions-section">
                 <div class="card">
-                    <div class="telegram-download-form">
-                        <div class="input-group">
-                            <input type="text" id="telegram-link-input" placeholder="请输入Telegram视频链接 (https://t.me/...)" class="form-control">
-                            <button class="btn btn-primary" id="download-link-btn">
-                                <i class="fas fa-download"></i>
-                                <span>下载</span>
+                    <div class="download-actions-container">
+                        <!-- Telegram链接下载 -->
+                        <div class="telegram-download-form">
+                            <div class="input-group">
+                                <input type="text" id="telegram-link-input" placeholder="请输入Telegram视频链接 (https://t.me/...)" class="form-control">
+                                <button class="btn btn-primary" id="download-link-btn">
+                                    <i class="fas fa-download"></i>
+                                    <span>下载</span>
+                                </button>
+                            </div>
+                            <div class="download-result" id="download-result" style="display: none;"></div>
+                        </div>
+                        
+                        <!-- 批量下载按钮 -->
+                        <div class="batch-download-trigger">
+                            <button class="btn btn-secondary" id="show-batch-download-btn">
+                                <i class="fas fa-layer-group"></i>
+                                <span>批量下载</span>
                             </button>
                         </div>
-                        <div class="download-result" id="download-result" style="display: none;"></div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 批量下载表单（默认隐藏） -->
+            <section class="batch-download-section" id="batch-download-section" style="display: none;">
+                <div class="card">
+                    <div class="batch-download-header">
+                        <h2><i class="fas fa-layer-group"></i> 批量下载</h2>
+                        <button class="btn btn-icon" id="hide-batch-download-btn">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                    <div class="batch-download-form">
+                        <div class="form-group">
+                            <label for="chat-id">频道/群组名称</label>
+                            <input type="text" id="chat-id" placeholder="输入频道或群组名称（支持英文、数字、下划线、连字符）" class="form-control">
+                        </div>
+                        <div class="form-row message-id-row">
+                            <div class="form-group">
+                                <label for="start-message-id">起始消息ID</label>
+                                <input type="number" id="start-message-id" placeholder="起始消息ID" class="form-control" min="1">
+                            </div>
+                            <div class="form-group">
+                                <label for="end-message-id">结束消息ID</label>
+                                <input type="number" id="end-message-id" placeholder="结束消息ID" class="form-control" min="1">
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="concurrent">并发数 (1-10)</label>
+                                <input type="number" id="concurrent" value="3" class="form-control" min="1" max="10">
+                            </div>
+                            <div class="form-group">
+                                <label for="interval">请求间隔 (毫秒)</label>
+                                <input type="number" id="interval" value="1000" class="form-control" min="0" max="5000">
+                            </div>
+                        </div>
+                        <div class="form-actions">
+                            <button class="btn btn-primary" id="batch-download-btn">
+                                <i class="fas fa-download"></i>
+                                <span>开始批量下载</span>
+                            </button>
+                        </div>
+                        <div class="batch-download-result" id="batch-download-result" style="display: none;"></div>
                     </div>
                 </div>
             </section>
@@ -99,8 +154,6 @@
             </div>
         </footer>
     </div>
-
-
 
     <!-- 加载脚本 -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/sockjs-client/1.6.1/sockjs.min.js"></script>

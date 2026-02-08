@@ -184,6 +184,7 @@ public class DatabaseInitializer implements CommandLineRunner {
                 caption TEXT NULL,
                 tags TEXT NULL,
                 thumbnail TEXT NULL,
+                chat_id BIGINT NULL,
                 state TEXT NULL,
                 create_time TEXT NULL,
                 complete_time TEXT NULL,

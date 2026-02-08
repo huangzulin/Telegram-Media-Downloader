@@ -21,9 +21,10 @@ public class UpdateNewMessageHandler {
 
         var messageContent = update.message.content;
         final long messageId = update.message.id;
+        final long chatId = update.message.chatId; // 保存chatId用于后续使用
         TdApi.Chat savedMessagesChat = Tmd.savedMessagesChat;
 
-        if (update.message.chatId != savedMessagesChat.id) {
+        if (chatId != savedMessagesChat.id) {
             return;
         }
 
@@ -37,7 +38,7 @@ public class UpdateNewMessageHandler {
                         if (linkInfo != null && linkInfo.message != null && 
                             linkInfo.message.content instanceof TdApi.MessageVideo video) {
                             log.info("在saved messages中检测到视频链接: {}", text);
-                            processVideoMessage(messageId, video);
+                            processVideoMessage(messageId, video, chatId);
                         } else {
                             log.debug("链接指向的消息不是视频类型或无法解析");
                         }
@@ -48,13 +49,13 @@ public class UpdateNewMessageHandler {
             }
         } else {
             if (messageContent instanceof TdApi.MessageVideo video) {
-                processVideoMessage(messageId, video);
+                processVideoMessage(messageId, video, chatId);
             }
         }
 
     }
 
-    public static void processVideoMessage(long messageId, TdApi.MessageVideo video) {
+    public static void processVideoMessage(long messageId, TdApi.MessageVideo video, long chatId) {
         var service = SpringContext.getBean(DownloadItemServiceImpl.class);
         var uniqueId = video.video.video.remote.uniqueId;
 
@@ -95,6 +96,7 @@ public class UpdateNewMessageHandler {
                 .fileId(video.video.video.id)
                 .fileSize(video.video.video.size)
                 .massageId(messageId)
+                .chatId(chatId)  // 保存chatId用于恢复下载
                 .uniqueId(uniqueId)
                 .state(DownloadState.Created.name())
                 .build();

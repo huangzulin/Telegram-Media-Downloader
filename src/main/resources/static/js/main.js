@@ -4,7 +4,7 @@ class TelegramMediaDownloader {
         this.isConnected = false;
         this.isAuthenticated = false;
         this.downloadingItems = [];
-        this.completedItems = [];
+        this.completedItems = []; // 不再加载已完成的数据
         this.currentFilter = 'downloading';
         this.autoRefreshInterval = null; // 自动刷新定时器
         this.lastStats = { total: 0, active: 0, completed: 0 }; // 初始化统计信息
@@ -16,8 +16,9 @@ class TelegramMediaDownloader {
         this.loadInitialData();
         this.startAutoRefresh(); // 启动自动刷新
         this.bindTelegramLinkEvents(); // 绑定Telegram链接事件
+        this.bindBatchDownloadEvents(); // 绑定批量下载事件
+        this.bindBatchDownloadToggleEvents(); // 绑定批量下载显示/隐藏事件
     }
-
     initializeElements() {
         // 状态指示器
         this.connectionStatus = document.getElementById('connection-status');
@@ -437,34 +438,7 @@ class TelegramMediaDownloader {
 
     async loadInitialData() {
         try {
-            // 加载初始统计数据
-            const statsResponse = await fetch('/api/health');
-            if (statsResponse.ok) {
-                const healthData = await statsResponse.json();
-                this.updateHealthStatus(healthData);
-                
-                // 特别检查认证状态
-                await this.checkAuthStatus(healthData);
-            }
-
-            // 加载已完成的下载项
-            const completedResponse = await fetch('/api/downloads/completed');
-            if (completedResponse.ok) {
-                const response = await completedResponse.json();
-                // 确保数据是数组格式
-                if (response && response.data && Array.isArray(response.data)) {
-                    this.completedItems = response.data;
-                } else if (Array.isArray(response)) {
-                    this.completedItems = response;
-                } else {
-                    console.warn('已完成下载项数据格式不正确:', response);
-                    this.completedItems = [];
-                }
-            } else {
-                this.completedItems = [];
-            }
-
-            // 加载进行中的下载项
+            // 只加载进行中的下载项，不加载已完成的数据
             const downloadingResponse = await fetch('/api/downloads/downloading');
             if (downloadingResponse.ok) {
                 const response = await downloadingResponse.json();
@@ -481,6 +455,9 @@ class TelegramMediaDownloader {
                 this.downloadingItems = [];
             }
 
+            // 不再加载已完成的下载项
+            this.completedItems = [];
+
             console.log('加载的下载数据:', {
                 downloadingItems: this.downloadingItems,
                 completedItems: this.completedItems
@@ -495,7 +472,6 @@ class TelegramMediaDownloader {
             this.downloadingItems = [];
             this.completedItems = [];
             this.updateDownloadStats();
-            //console.error('加载数据失败');
         }
     }
 
@@ -1247,6 +1223,218 @@ class TelegramMediaDownloader {
                 btn.disabled = false;
                 btn.title = '';
             });
+        }
+    }
+
+    bindBatchDownloadToggleEvents() {
+        const showBtn = document.getElementById('show-batch-download-btn');
+        const hideBtn = document.getElementById('hide-batch-download-btn');
+        const batchSection = document.getElementById('batch-download-section');
+        
+        if (showBtn) {
+            showBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                this.showBatchDownloadForm();
+            });
+        }
+        
+        if (hideBtn && batchSection) {
+            hideBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                this.hideBatchDownloadForm();
+            });
+        }
+        
+        // 点击表单外部区域也隐藏表单（移动端体验优化）
+        if (batchSection) {
+            batchSection.addEventListener('click', (e) => {
+                // 如果点击的是表单区域本身，则不隐藏
+                if (e.target === batchSection) {
+                    this.hideBatchDownloadForm();
+                }
+            });
+        }
+    }
+
+    showBatchDownloadForm() {
+        const batchSection = document.getElementById('batch-download-section');
+        const showBtn = document.getElementById('show-batch-download-btn');
+        
+        if (batchSection) {
+            batchSection.style.display = 'block';
+            // 检测是否为移动端
+            const isMobile = window.innerWidth <= 768;
+            
+            if (isMobile) {
+                // 移动端：表单从底部滑入
+                batchSection.style.transform = 'translateY(0)';
+                batchSection.style.opacity = '1';
+            } else {
+                // 桌面端：滚动到表单位置
+                batchSection.scrollIntoView({ behavior: 'smooth' });
+            }
+            
+            if (showBtn) showBtn.style.display = 'none';
+        }
+    }
+    
+    hideBatchDownloadForm() {
+        const batchSection = document.getElementById('batch-download-section');
+        const showBtn = document.getElementById('show-batch-download-btn');
+        
+        if (batchSection) {
+            const isMobile = window.innerWidth <= 768;
+            
+            if (isMobile) {
+                // 移动端：表单向下滑出
+                batchSection.style.transform = 'translateY(100%)';
+                batchSection.style.opacity = '0';
+                // 延迟隐藏以完成动画
+                setTimeout(() => {
+                    batchSection.style.display = 'none';
+                }, 300);
+            } else {
+                // 桌面端：直接隐藏
+                batchSection.style.display = 'none';
+            }
+            
+            if (showBtn) showBtn.style.display = 'inline-block';
+        }
+    }
+
+    bindBatchDownloadEvents() {
+        const batchDownloadBtn = document.getElementById('batch-download-btn');
+        const resultDiv = document.getElementById('batch-download-result');
+        
+        if (batchDownloadBtn) {
+            batchDownloadBtn.addEventListener('click', () => {
+                this.handleBatchDownload();
+            });
+        }
+        
+        // 隐藏结果提示的事件
+        const chatIdInput = document.getElementById('chat-id');
+        const startMessageIdInput = document.getElementById('start-message-id');
+        const endMessageIdInput = document.getElementById('end-message-id');
+        const concurrentInput = document.getElementById('concurrent');
+        const intervalInput = document.getElementById('interval');
+        
+        [chatIdInput, startMessageIdInput, endMessageIdInput, concurrentInput, intervalInput].forEach(input => {
+            if (input) {
+                input.addEventListener('input', () => {
+                    if (resultDiv && resultDiv.style.display !== 'none') {
+                        resultDiv.style.display = 'none';
+                    }
+                });
+            }
+        });
+    }
+
+    async handleBatchDownload() {
+        const chatIdInput = document.getElementById('chat-id');
+        const startMessageIdInput = document.getElementById('start-message-id');
+        const endMessageIdInput = document.getElementById('end-message-id');
+        const concurrentInput = document.getElementById('concurrent');
+        const intervalInput = document.getElementById('interval');
+        const batchDownloadBtn = document.getElementById('batch-download-btn');
+        const resultDiv = document.getElementById('batch-download-result');
+        
+        const chatId = chatIdInput.value.trim();
+        const startMessageId = startMessageIdInput.value.trim();
+        const endMessageId = endMessageIdInput.value.trim();
+        const concurrent = concurrentInput.value || '3';
+        const interval = intervalInput.value || '1000';
+        
+        // 验证输入
+        if (!chatId || !startMessageId || !endMessageId) {
+            this.showBatchResult('请填写所有必填字段', 'error');
+            return;
+        }
+        
+        if (isNaN(parseInt(chatId)) && !/^[a-zA-Z0-9_-]+$/.test(chatId)) {
+            this.showBatchResult('频道/群组名称格式不正确，请使用英文、数字、下划线或连字符', 'error');
+            return;
+        }
+        
+        if (isNaN(parseInt(startMessageId)) || isNaN(parseInt(endMessageId))) {
+            this.showBatchResult('消息ID必须是数字', 'error');
+            return;
+        }
+        
+        const startId = parseInt(startMessageId);
+        const endId = parseInt(endMessageId);
+        
+        if (startId > endId) {
+            this.showBatchResult('起始消息ID不能大于结束消息ID', 'error');
+            return;
+        }
+        
+        if (startId < 1 || endId < 1) {
+            this.showBatchResult('消息ID必须大于0', 'error');
+            return;
+        }
+        
+        // 显示加载状态
+        batchDownloadBtn.disabled = true;
+        batchDownloadBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i><span>处理中...</span>';
+        resultDiv.style.display = 'none';
+        
+        try {
+            // 调用批量下载API
+            const response = await fetch('/api/downloads/batch', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    chatId: chatId,
+                    startMessageId: startId,
+                    endMessageId: endId,
+                    concurrent: parseInt(concurrent),
+                    interval: parseInt(interval)
+                })
+            });
+            
+            const result = await response.json();
+            
+            if (response.ok && result.code === 200) {
+                this.showBatchResult(result.data.message || '批量下载任务已提交', 'success');
+                
+                // 5秒后自动隐藏成功提示和表单
+                setTimeout(() => {
+                    resultDiv.style.display = 'none';
+                    const batchSection = document.getElementById('batch-download-section');
+                    const showBtn = document.getElementById('show-batch-download-btn');
+                    if (batchSection) batchSection.style.display = 'none';
+                    if (showBtn) showBtn.style.display = 'inline-block';
+                }, 5000);
+                
+                // 清空输入框
+                chatIdInput.value = '';
+                startMessageIdInput.value = '';
+                endMessageIdInput.value = '';
+                
+                // 刷新下载列表
+                await this.loadInitialData();
+            } else {
+                this.showBatchResult(result.message || '批量下载请求失败', 'error');
+            }
+        } catch (error) {
+            console.error('处理批量下载时发生错误:', error);
+            this.showBatchResult('网络错误，请稍后重试: ' + error.message, 'error');
+        } finally {
+            // 恢复按钮状态
+            batchDownloadBtn.disabled = false;
+            batchDownloadBtn.innerHTML = '<i class="fas fa-download"></i><span>开始批量下载</span>';
+        }
+    }
+
+    showBatchResult(message, type) {
+        const resultDiv = document.getElementById('batch-download-result');
+        if (resultDiv) {
+            resultDiv.className = `batch-download-result alert-${type}`;
+            resultDiv.innerHTML = message;
+            resultDiv.style.display = 'block';
         }
     }
 }

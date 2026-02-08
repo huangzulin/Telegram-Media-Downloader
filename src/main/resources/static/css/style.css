@@ -1290,142 +1290,285 @@ body {
     }
 }
 
-/* Telegram链接下载区域样式 */
-.telegram-download-section {
+/* 下载操作区域样式 */
+.download-actions-section {
+    margin-bottom: var(--spacing-lg);
 }
 
-.telegram-download-section .card {
+.download-actions-section .card {
     background: var(--bg-white);
     border-radius: var(--border-radius);
     padding: var(--spacing-lg);
     box-shadow: var(--box-shadow);
 }
 
-.telegram-download-section h2 {
+.download-actions-container {
+    display: flex;
+    gap: var(--spacing-md);
+    align-items: flex-start;
+    flex-wrap: wrap;
+}
+
+/* Telegram链接下载样式 */
+.telegram-download-form {
+    flex: 1;
+    min-width: 300px;
+}
+
+.telegram-download-form .input-group {
+    display: flex;
+    gap: var(--spacing-sm);
+}
+
+.telegram-download-form .form-control {
+    flex: 1;
+    padding: var(--spacing-sm);
+    border: 1px solid var(--border-color);
+    border-radius: var(--border-radius-sm);
+    font-size: 1rem;
+    height: 42px; /* 统一高度 */
+    box-sizing: border-box;
+}
+
+.telegram-download-form .btn {
+    white-space: nowrap;
+    height: 42px; /* 统一高度 */
+    box-sizing: border-box;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.download-result {
+    margin-top: var(--spacing-sm);
+    padding: var(--spacing-sm);
+    border-radius: var(--border-radius-sm);
+    display: none;
+}
+
+.download-result.alert-success {
+    background-color: var(--success-bg);
+    border: 1px solid var(--success-border);
+    color: var(--success-color);
+}
+
+.download-result.alert-error {
+    background-color: var(--danger-bg);
+    border: 1px solid var(--danger-border);
+    color: var(--danger-color);
+}
+
+/* 批量下载触发按钮 */
+.batch-download-trigger {
+    display: flex;
+    align-items: center;
+}
+
+.batch-download-trigger .btn {
+    height: 42px; /* 统一高度 */
+    box-sizing: border-box;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* 批量下载区域样式 */
+.batch-download-section {
+    margin-bottom: var(--spacing-lg);
+}
+
+.batch-download-section .card {
+    background: var(--bg-white);
+    border-radius: var(--border-radius);
+    padding: var(--spacing-lg);
+    box-shadow: var(--box-shadow);
+}
+
+.batch-download-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
     margin-bottom: var(--spacing-md);
+    padding-bottom: var(--spacing-sm);
+    border-bottom: 1px solid var(--border-color);
+}
+
+.batch-download-header h2 {
+    margin: 0;
     color: var(--text-primary);
+    font-size: 1.5rem;
     display: flex;
     align-items: center;
     gap: var(--spacing-sm);
 }
 
-.telegram-download-section h2 i {
-    color: var(--primary-color);
+.btn-icon {
+    background: none;
+    border: none;
+    color: var(--text-secondary);
+    cursor: pointer;
+    padding: var(--spacing-sm);
+    border-radius: var(--border-radius-sm);
+    transition: all var(--transition-fast);
 }
 
-.telegram-download-form {
+.btn-icon:hover {
+    background: var(--bg-light);
+    color: var(--text-primary);
+}
+
+.batch-download-form {
     display: flex;
     flex-direction: column;
     gap: var(--spacing-md);
 }
 
-.input-group {
+.form-row {
     display: flex;
-    gap: var(--spacing-sm);
-    align-items: center;
+    gap: var(--spacing-md);
+    flex-wrap: wrap;
 }
 
-.form-control {
+/* 特殊的消息ID行样式 */
+.message-id-row {
+    display: flex;
+    gap: var(--spacing-md);
+    flex-wrap: nowrap;
+}
+
+.message-id-row .form-group {
     flex: 1;
-    padding: var(--spacing-sm) var(--spacing-md);
-    border: 2px solid var(--border-color);
-    border-radius: var(--border-radius);
+    min-width: 150px;
+}
+
+.form-group {
+    flex: 1;
+    min-width: 200px;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: var(--spacing-xs);
+    font-weight: 500;
+    color: var(--text-primary);
+}
+
+.form-group .form-control {
+    width: 100%;
+    padding: var(--spacing-sm);
+    border: 1px solid var(--border-color);
+    border-radius: var(--border-radius-sm);
     font-size: 1rem;
     transition: border-color var(--transition-fast);
 }
 
-.form-control:focus {
+.form-group .form-control:focus {
     outline: none;
     border-color: var(--primary-color);
-    box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
+    box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.25);
 }
 
-.form-control::placeholder {
-    color: var(--text-secondary);
-}
-
-.link-examples {
-    background: var(--bg-light);
-    padding: var(--spacing-sm);
-    border-radius: var(--border-radius);
-    font-size: 0.85rem;
-}
-
-.link-examples small {
-    display: block;
-    margin-bottom: var(--spacing-xs);
-    color: var(--text-secondary);
-    font-weight: 500;
-}
-
-.link-examples code {
-    display: block;
-    background: var(--bg-white);
-    padding: var(--spacing-xs) var(--spacing-sm);
-    border-radius: 4px;
-    margin-bottom: var(--spacing-xs);
-    font-family: 'Courier New', monospace;
-    font-size: 0.8rem;
-    color: var(--primary-color);
-}
-
-.link-examples code:last-child {
-    margin-bottom: 0;
-}
-
-.download-result {
-    padding: var(--spacing-sm);
-    border-radius: var(--border-radius);
-    font-size: 0.9rem;
+.form-actions {
     display: flex;
-    align-items: center;
-    gap: var(--spacing-sm);
+    justify-content: center;
+    margin-top: var(--spacing-md);
 }
 
-.download-result.success {
-    background: var(--success-bg);
+.batch-download-result {
+    margin-top: var(--spacing-md);
+    padding: var(--spacing-sm);
+    border-radius: var(--border-radius-sm);
+    display: none;
+}
+
+.batch-download-result.alert-success {
+    background-color: var(--success-bg);
+    border: 1px solid var(--success-border);
     color: var(--success-color);
-    border: 1px solid var(--success-color);
 }
 
-.download-result.error {
-    background: var(--danger-bg);
+.batch-download-result.alert-error {
+    background-color: var(--danger-bg);
+    border: 1px solid var(--danger-border);
     color: var(--danger-color);
-    border: 1px solid var(--danger-color);
 }
 
-.download-result i {
-    font-size: 1.1rem;
-}
-
-/* 响应式调整 */
+/* 响应式设计 */
 @media (max-width: 768px) {
-    .input-group {
-        flex-direction: row; /* 移动端也保持同行显示 */
+    .download-actions-container {
+        flex-direction: row;
+        gap: var(--spacing-sm);
+        flex-wrap: wrap;
     }
     
-    .form-control {
+    .telegram-download-form {
         flex: 1;
-        min-width: 0; /* 允许输入框收缩 */
+        min-width: 200px;
     }
     
-    .telegram-download-section .card {
+    .telegram-download-form .input-group {
+        flex-direction: row;
+    }
+    
+    .telegram-download-form .form-control {
+        min-width: 150px;
+    }
+    
+    .batch-download-trigger {
+        min-width: auto;
+    }
+    
+    .batch-download-trigger .btn {
+        white-space: nowrap;
+        padding: var(--spacing-sm) var(--spacing-md);
+    }
+    
+    .form-row {
+        flex-direction: column;
+    }
+    
+    /* 移动端消息ID行保持同行显示 */
+    .message-id-row {
+        flex-direction: row;
+    }
+    
+    .message-id-row .form-group {
+        min-width: 120px;
+    }
+    
+    .form-group {
+        min-width: 100%;
+    }
+    
+    .download-actions-section .card,
+    .batch-download-section .card {
         padding: var(--spacing-md);
     }
     
-    /* 进一步优化小屏幕显示 */
-    @media (max-width: 480px) {
-        .input-group {
-            gap: var(--spacing-xs);
-        }
-        
-        .form-control {
-            padding: var(--spacing-xs) var(--spacing-sm);
-            font-size: 0.9rem;
-        }
-        
-        .btn span {
-            display: none; /* 小屏幕上只显示图标 */
-        }
+    /* 移动端批量下载表单位于页面底部 */
+    .batch-download-section {
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        background: var(--bg-white);
+        border-top: 1px solid var(--border-color);
+        box-shadow: 0 -2px 10px rgba(0,0,0,0.1);
+        z-index: 1000;
+        margin-bottom: 0;
+        transform: translateY(100%);
+        opacity: 0;
+        transition: transform 0.3s ease, opacity 0.3s ease;
+    }
+    
+    .batch-download-section.show {
+        transform: translateY(0);
+        opacity: 1;
+    }
+    
+    .batch-download-section .card {
+        border-radius: var(--border-radius) var(--border-radius) 0 0;
+        box-shadow: none;
+        margin-bottom: 0;
     }
 }

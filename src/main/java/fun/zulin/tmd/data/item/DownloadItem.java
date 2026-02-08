@@ -68,6 +68,12 @@ public class DownloadItem {
      */
     private String thumbnail;
 
+    /**
+     * 消息来源的聊天ID
+     * 用于恢复下载时定位正确的聊天
+     */
+    private Long chatId;
+
     @Ignore
     @TableField(exist = false)
     private Float progress;

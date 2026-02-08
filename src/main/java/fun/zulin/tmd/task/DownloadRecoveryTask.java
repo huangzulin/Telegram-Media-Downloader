@@ -1,10 +1,16 @@
 package fun.zulin.tmd.task;
 
+import fun.zulin.tmd.data.item.DownloadItem;
+import fun.zulin.tmd.data.item.DownloadItemServiceImpl;
+import fun.zulin.tmd.data.item.DownloadState;
 import fun.zulin.tmd.telegram.DownloadManage;
 import fun.zulin.tmd.telegram.Tmd;
+import fun.zulin.tmd.utils.SpringContext;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
+
+import java.util.List;
 
 /**
  * 下载恢复定时任务
@@ -34,15 +40,62 @@ public class DownloadRecoveryTask {
                 return;
             }
             
-            // 检查数据库中是否有未完成的任务
+            // 检查数据库中是否有未完成的任务（包括Failed状态的任务）
+            var service = SpringContext.getBean(DownloadItemServiceImpl.class);
+            var failedTasks = service.getFailedItemsFromDB();
             int pendingTasks = DownloadManage.getItems().size();
+            
             if (pendingTasks > 0) {
                 log.info("发现 {} 个待处理的下载任务，开始恢复...", pendingTasks);
                 DownloadManage.startDownloading();
+            } else if (failedTasks != null && !failedTasks.isEmpty()) {
+                log.info("发现 {} 个失败的下载任务，考虑重新尝试...", failedTasks.size());
+                // 可以选择性地恢复失败的任务
+                handleFailedTasksRecovery(failedTasks);
             }
             
         } catch (Exception e) {
             log.error("下载恢复检查时发生错误", e);
+        }
+    }
+    
+    /**
+     * 处理失败任务的恢复
+     * 可以选择性地将某些失败任务重新标记为待下载状态
+     */
+    private void handleFailedTasksRecovery(List<DownloadItem> failedTasks) {
+        try {
+            var service = SpringContext.getBean(DownloadItemServiceImpl.class);
+            
+            // 筛选出可以重试的任务（比如下载计数较少的）
+            failedTasks.stream()
+                .filter(item -> item.getDownloadCount() != null && item.getDownloadCount() < 3)
+                .forEach(item -> {
+                    try {
+                        log.info("尝试恢复失败任务: {} (失败次数: {})", 
+                            item.getFilename(), item.getDownloadCount());
+                        
+                        // 将状态改为Created，允许重新下载
+                        item.setState(DownloadState.Created.name());
+                        item.setCaption("重新尝试下载");
+                        service.updateById(item);
+                        
+                        // 添加到下载队列
+                        DownloadManage.addDownloadingItems(item);
+                        
+                    } catch (Exception e) {
+                        log.error("恢复失败任务 {} 时出错", item.getUniqueId(), e);
+                    }
+                });
+                
+            // 如果有可恢复的任务，启动下载
+            if (DownloadManage.getItems().size() > 0) {
+                log.info("开始恢复 {} 个失败任务", DownloadManage.getItems().size());
+                DownloadManage.startDownloading();
+            }
+            
+        } catch (Exception e) {
+            log.error("处理失败任务恢复时发生错误", e);
         }
     }
 }
