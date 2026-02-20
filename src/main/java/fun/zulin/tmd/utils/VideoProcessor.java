@@ -100,6 +100,24 @@ public class VideoProcessor {
     }
     
     /**
+     * 获取视频时长（秒）
+     * @param videoPath 视频文件路径
+     * @return 视频时长（秒），失败返回-1
+     */
+    public static double getVideoDuration(String videoPath) {
+        try {
+            FFmpegProbeResult probeResult = getVideoInfo(videoPath);
+            if (probeResult != null && probeResult.getFormat() != null) {
+                return probeResult.getFormat().duration;
+            }
+            return -1;
+        } catch (Exception e) {
+            log.error("获取视频时长失败: {}", videoPath, e);
+            return -1;
+        }
+    }
+
+    /**
      * 删除指定的缩略图文件
      * @param thumbnailFilename 缩略图文件名
      * @return 删除是否成功

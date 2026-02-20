@@ -1375,10 +1375,11 @@ class TelegramMediaDownloader {
                     if (showBtn) showBtn.style.display = 'inline-block';
                 }, 5000);
                 
-                // 清空输入框
+                                // 清空输入框
                 chatIdInput.value = '';
                 startMessageIdInput.value = '';
                 endMessageIdInput.value = '';
+                minDurationInput.value = '10';
                 
                 // 刷新下载列表
                 await this.loadInitialData();

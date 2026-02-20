@@ -355,7 +355,7 @@ public class DownloadApiController {
                                 request.getChatId().trim(), messageId);
 
                         // 异步处理单个链接
-                        processSingleLinkForBatch(telegramLink, semaphore, latch,
+                        processSingleLinkForBatch(telegramLink, semaphore, latch, request.getMinDurationMinutes(),
                                 () -> successCounter.incrementAndGet(),
                                 () -> failedCounter.incrementAndGet());
 
@@ -526,7 +526,7 @@ public class DownloadApiController {
                                 request.getChatId().trim(), messageId);
 
                         // 异步处理单个链接
-                        processSingleLinkForBatch(telegramLink, semaphore, latch,
+                        processSingleLinkForBatch(telegramLink, semaphore, latch, request.getMinDurationMinutes(),
                                 () -> successCounter.incrementAndGet(),
                                 () -> failedCounter.incrementAndGet());
 
@@ -570,7 +570,7 @@ public class DownloadApiController {
      * 处理单个链接（用于批量下载）
      */
     private void processSingleLinkForBatch(String link, Semaphore semaphore,
-                                           CountDownLatch latch, Runnable onSuccess, Runnable onFailure) {
+                                           CountDownLatch latch, Integer minDurationMinutes, Runnable onSuccess, Runnable onFailure) {
 
         Tmd.client.send(new TdApi.GetMessageLinkInfo(link), res -> {
             try {
@@ -581,13 +581,22 @@ public class DownloadApiController {
 
                         // 检查消息内容类型
                         if (linkInfo.message.content instanceof TdApi.MessageVideo video) {
-                            // 规范化chatId格式
-                            log.info("[🐛 DEBUG] 发现视频链接 {}: {}, 原始Chat ID: {}",
-                                   link, video.video.fileName, linkInfo.chatId);
-                            // 复用现有的视频处理逻辑，使用规范化后的chatId
-                            fun.zulin.tmd.telegram.handler.UpdateNewMessageHandler.processVideoMessage(
-                                    messageId, video, linkInfo.chatId);
-                            onSuccess.run();
+                            // 检查视频时长是否满足要求（使用传入的minDurationMinutes参数）
+                            int effectiveMinDuration = minDurationMinutes != null ? minDurationMinutes : 10;
+                            if (video.video.duration >= effectiveMinDuration * 60) {
+                                // 规范化chatId格式
+                                log.info("[🐛 DEBUG] 发现视频链接 {}: {}, 原始Chat ID: {}",
+                                       link, video.video.fileName, linkInfo.chatId);
+                                // 复用现有的视频处理逻辑，使用规范化后的chatId
+                                fun.zulin.tmd.telegram.handler.UpdateNewMessageHandler.processVideoMessage(
+                                        messageId, video, linkInfo.chatId);
+                                onSuccess.run();
+                            } else {
+                                log.info("[🐛 DEBUG] 视频链接时长不足{}分钟，跳过下载: {} (时长: {}秒)", 
+                                        effectiveMinDuration, video.video.fileName, video.video.duration);
+                                onSuccess.run(); // 仍然标记为成功，因为这是预期行为
+                                latch.countDown();
+                            }
                         } else if (linkInfo.message.content instanceof TdApi.MessageDocument document) {
                             log.info("[🐛 DEBUG] 发现文档链接 {}: {}", link, document.document.fileName);
                             // 处理文档消息，并传递latch用于真正的完成通知
@@ -1027,6 +1036,7 @@ public class DownloadApiController {
         private Long endMessageId;
         private Integer concurrent = 3;  // 默认并发数
         private Integer interval = 1000; // 默认间隔时间(毫秒)
+        private Integer minDurationMinutes = 10; // 默认最小时长(分钟)
 
         // getters and setters
         public String getChatId() {
@@ -1067,6 +1077,14 @@ public class DownloadApiController {
 
         public void setInterval(Integer interval) {
             this.interval = interval;
+        }
+
+        public Integer getMinDurationMinutes() {
+            return minDurationMinutes;
+        }
+
+        public void setMinDurationMinutes(Integer minDurationMinutes) {
+            this.minDurationMinutes = minDurationMinutes;
         }
     }
 

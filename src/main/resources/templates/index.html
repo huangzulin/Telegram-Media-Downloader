@@ -120,6 +120,13 @@
                                 <input type="number" id="interval" value="1000" class="form-control" min="0" max="5000">
                             </div>
                         </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="min-duration">最小时长 (分钟)</label>
+                                <input type="number" id="min-duration" value="10" class="form-control" min="0" max="1440" step="1">
+                                <small class="form-text">跳过时长小于该值的视频（0表示不限制）</small>
+                            </div>
+                        </div>
                         <div class="form-actions">
                             <button class="btn btn-primary" id="batch-download-btn">
                                 <i class="fas fa-download"></i>
