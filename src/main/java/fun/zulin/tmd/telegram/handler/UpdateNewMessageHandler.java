@@ -36,15 +36,9 @@ public class UpdateNewMessageHandler {
                         TdApi.MessageLinkInfo linkInfo = res.get();
                         if (linkInfo != null && linkInfo.message != null &&
                                 linkInfo.message.content instanceof TdApi.MessageVideo video) {
-                            // 检查视频时长是否满足要求（默认10分钟）
-                            int minDurationMinutes = 10;
-                            if (video.video.duration >= minDurationMinutes * 60) {
-                                log.info("在saved messages中检测到视频链接: {}", text);
-                                processVideoMessage(messageId, video, linkInfo.chatId);
-                            } else {
-                                log.info("视频链接时长不足{}分钟，跳过下载: {} (时长: {}秒)", 
-                                        minDurationMinutes, video.video.fileName, video.video.duration);
-                            }
+                            // 转发到Saved Messages的视频不进行时长限制
+                            log.info("在saved messages中检测到视频链接: {}", text);
+                            processVideoMessage(messageId, video, linkInfo.chatId);
                         } else {
                             log.debug("链接指向的消息不是视频类型或无法解析");
                         }
@@ -55,14 +49,8 @@ public class UpdateNewMessageHandler {
             }
         } else {
             if (messageContent instanceof TdApi.MessageVideo video) {
-                // 检查视频时长是否满足要求（默认10分钟）
-                int minDurationMinutes = 10;
-                if (video.video.duration >= minDurationMinutes * 60) {
-                    processVideoMessage(messageId, video, savedMessagesChat.id);
-                } else {
-                    log.info("视频时长不足{}分钟，跳过下载: {} (时长: {}秒)", 
-                            minDurationMinutes, video.video.fileName, video.video.duration);
-                }
+                // 转发到Saved Messages的视频不进行时长限制
+                processVideoMessage(messageId, video, savedMessagesChat.id);
             }
         }
 

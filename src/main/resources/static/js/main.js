@@ -1284,8 +1284,9 @@ class TelegramMediaDownloader {
         const endMessageIdInput = document.getElementById('end-message-id');
         const concurrentInput = document.getElementById('concurrent');
         const intervalInput = document.getElementById('interval');
+        const minDurationInput = document.getElementById('min-duration');
         
-        [chatIdInput, startMessageIdInput, endMessageIdInput, concurrentInput, intervalInput].forEach(input => {
+        [chatIdInput, startMessageIdInput, endMessageIdInput, concurrentInput, intervalInput, minDurationInput].forEach(input => {
             if (input) {
                 input.addEventListener('input', () => {
                     if (resultDiv && resultDiv.style.display !== 'none') {
@@ -1302,6 +1303,7 @@ class TelegramMediaDownloader {
         const endMessageIdInput = document.getElementById('end-message-id');
         const concurrentInput = document.getElementById('concurrent');
         const intervalInput = document.getElementById('interval');
+        const minDurationInput = document.getElementById('min-duration');
         const batchDownloadBtn = document.getElementById('batch-download-btn');
         const resultDiv = document.getElementById('batch-download-result');
         
@@ -1310,6 +1312,7 @@ class TelegramMediaDownloader {
         const endMessageId = endMessageIdInput.value.trim();
         const concurrent = concurrentInput.value || '3';
         const interval = intervalInput.value || '1000';
+        const minDuration = minDurationInput.value || '10';
         
         // 验证输入
         if (!chatId || !startMessageId || !endMessageId) {
