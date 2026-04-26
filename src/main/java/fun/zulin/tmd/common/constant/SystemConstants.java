@@ -23,10 +23,30 @@ public class SystemConstants {
     public static class File {
         /** 下载目录 */
         public static final String DOWNLOAD_DIR = "downloads";
+        /** 视频子目录 */
+        public static final String VIDEOS_DIR = "videos";
+        /** 缩略图子目录 */
+        public static final String THUMBNAILS_DIR = "thumbnails";
+        /** 临时文件子目录 */
+        public static final String TEMP_DIR = "temp";
         /** 数据目录 */
         public static final String DATA_DIR = "data";
         /** 最大文件名长度 */
         public static final int MAX_FILENAME_LENGTH = 255;
+        
+        /**
+         * 获取视频目录完整路径
+         */
+        public static String getVideosDirPath() {
+            return DOWNLOAD_DIR + "/" + VIDEOS_DIR;
+        }
+        
+        /**
+         * 获取缩略图目录完整路径
+         */
+        public static String getThumbnailsDirPath() {
+            return DOWNLOAD_DIR + "/" + THUMBNAILS_DIR;
+        }
     }
     
     /**

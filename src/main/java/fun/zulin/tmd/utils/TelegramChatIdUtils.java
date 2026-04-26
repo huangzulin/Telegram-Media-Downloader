@@ -11,7 +11,6 @@ public class TelegramChatIdUtils {
 
     // Telegram超级群组和频道的前缀
     private static final long SUPERGROUP_PREFIX = -100L;
-    private static final long CHANNEL_PREFIX = -100L;
 
     /**
      * 规范化Chat ID，将Telegram的内部格式转换为标准格式

@@ -1,5 +1,6 @@
 package fun.zulin.tmd.config;
 
+import fun.zulin.tmd.telegram.DownloadManage;
 import fun.zulin.tmd.telegram.Tmd;
 import fun.zulin.tmd.utils.DownloadDirectoryManager;
 import lombok.RequiredArgsConstructor;
@@ -13,7 +14,7 @@ import java.util.concurrent.TimeUnit;
 
 /**
  * 应用关闭监听器
- * 确保Telegram客户端优雅关闭
+ * 确保Telegram客户端和下载管理器优雅关闭
  */
 @Slf4j
 @Component
@@ -27,6 +28,15 @@ public class ApplicationShutdownListener {
         log.info("应用程序正在关闭，开始清理资源...");
         
         try {
+            // 关闭下载管理器线程池
+            log.info("正在关闭下载管理器...");
+            try {
+                DownloadManage.shutdown();
+                log.info("下载管理器已关闭");
+            } catch (Exception e) {
+                log.warn("关闭下载管理器时出现错误: {}", e.getMessage());
+            }
+            
             // 关闭Telegram客户端
             if (Tmd.client != null) {
                 log.info("正在关闭Telegram客户端...");

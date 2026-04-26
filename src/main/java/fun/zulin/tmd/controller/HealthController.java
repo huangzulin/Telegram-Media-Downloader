@@ -1,8 +1,10 @@
 package fun.zulin.tmd.controller;
 
 import fun.zulin.tmd.common.exception.ApiResponse;
+import fun.zulin.tmd.config.TmdProperties;
 import fun.zulin.tmd.telegram.DownloadManage;
 import fun.zulin.tmd.telegram.Tmd;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -24,7 +26,10 @@ import java.util.stream.Collectors;
 @Slf4j
 @RestController
 @RequestMapping("/api")
+@RequiredArgsConstructor
 public class HealthController {
+
+    private final TmdProperties tmdProperties;
     
     /**
      * 健康检查端点
@@ -38,13 +43,20 @@ public class HealthController {
         healthInfo.put("userLoggedIn", Tmd.me != null);
         if (Tmd.me != null) {
             healthInfo.put("userId", Tmd.me.id);
-            // username字段可能不存在，使用替代方案
             healthInfo.put("username", "N/A");
         }
         
         // 下载状态
         healthInfo.put("activeDownloads", DownloadManage.getItems().size());
-        healthInfo.put("downloadingItems", DownloadManage.getItems());
+        healthInfo.put("maxConcurrent", DownloadManage.getMaxConcurrentDownloads());
+        
+        // 配置信息
+        Map<String, Object> configInfo = new HashMap<>();
+        configInfo.put("maxConcurrent", tmdProperties.getDownload().getMaxConcurrent());
+        configInfo.put("priority", tmdProperties.getDownload().getPriority());
+        configInfo.put("timeoutMinutes", tmdProperties.getDownload().getTimeoutMinutes());
+        configInfo.put("downloadDir", tmdProperties.getStorage().getDownloadDir());
+        healthInfo.put("config", configInfo);
         
         // 系统信息
         healthInfo.put("timestamp", System.currentTimeMillis());

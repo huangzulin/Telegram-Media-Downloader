@@ -2,6 +2,7 @@ package fun.zulin.tmd.telegram;
 
 import cn.hutool.core.collection.CollectionUtil;
 import fun.zulin.tmd.common.constant.SystemConstants;
+import fun.zulin.tmd.config.TmdProperties;
 import fun.zulin.tmd.data.item.DownloadItem;
 import fun.zulin.tmd.data.item.DownloadItemServiceImpl;
 import fun.zulin.tmd.data.item.DownloadState;
@@ -35,25 +36,117 @@ public class DownloadManage {
     private static final AtomicInteger activeDownloads = new AtomicInteger(0);
 
     /**
+     * Telegram下载优先级
+     */
+    private static volatile int DOWNLOAD_PRIORITY = 16;
+
+    /**
      * 最大并发下载数
      */
-    private static final int MAX_CONCURRENT_DOWNLOADS = SystemConstants.Download.DEFAULT_PRIORITY;
+    private static volatile int MAX_CONCURRENT_DOWNLOADS = 3;
 
     /**
-     * 下载执行器
+     * 下载超时时间（分钟）
      */
-    private static final ExecutorService executorService = Executors.newFixedThreadPool(MAX_CONCURRENT_DOWNLOADS,
-            r -> new Thread(r, "download-thread-" + System.nanoTime()));
+    private static volatile int DOWNLOAD_TIMEOUT_MINUTES = 30;
 
     /**
-     * 下载信号量，控制并发数
+     * 下载执行器（使用 ThreadPoolExecutor 以支持优雅关闭）
      */
-    private static final Semaphore downloadSemaphore = new Semaphore(MAX_CONCURRENT_DOWNLOADS);
+    private static volatile ThreadPoolExecutor executorService;
 
     /**
      * 状态变更监听器列表
      */
     private static final List<StateChangeListener> stateChangeListeners = new CopyOnWriteArrayList<>();
+
+    /**
+     * 是否已初始化
+     */
+    private static volatile boolean initialized = false;
+
+    /**
+     * 初始化下载管理器
+     * 在应用启动或配置变更时调用
+     */
+    public static synchronized void initialize() {
+        if (initialized) {
+            return;
+        }
+        
+        // 从配置获取参数
+        try {
+            var properties = SpringContext.getBean(TmdProperties.class);
+            MAX_CONCURRENT_DOWNLOADS = properties.getDownload().getMaxConcurrent();
+            DOWNLOAD_PRIORITY = properties.getDownload().getPriority();
+            DOWNLOAD_TIMEOUT_MINUTES = properties.getDownload().getTimeoutMinutes();
+        } catch (Exception e) {
+            log.warn("无法获取配置，使用默认值: 最大并发数={}, 优先级={}, 超时={}分钟", 
+                    MAX_CONCURRENT_DOWNLOADS, DOWNLOAD_PRIORITY, DOWNLOAD_TIMEOUT_MINUTES);
+        }
+
+        // 创建线程池（核心线程空闲超时需要非零的 keepAliveTime）
+        executorService = new ThreadPoolExecutor(
+                MAX_CONCURRENT_DOWNLOADS,
+                MAX_CONCURRENT_DOWNLOADS,
+                60L,
+                TimeUnit.SECONDS,
+                new LinkedBlockingQueue<>(),
+                r -> {
+                    Thread t = new Thread(r);
+                    t.setName("download-thread-" + System.nanoTime());
+                    t.setDaemon(true);
+                    return t;
+                },
+                new ThreadPoolExecutor.CallerRunsPolicy()
+        );
+        executorService.allowCoreThreadTimeOut(true);
+        
+        initialized = true;
+        log.info("DownloadManage 初始化完成: 最大并发数={}, 优先级={}, 超时={}分钟", 
+                MAX_CONCURRENT_DOWNLOADS, DOWNLOAD_PRIORITY, DOWNLOAD_TIMEOUT_MINUTES);
+    }
+
+    /**
+     * 优雅关闭下载管理器
+     */
+    public static synchronized void shutdown() {
+        if (!initialized || executorService == null) {
+            return;
+        }
+
+        log.info("开始优雅关闭 DownloadManage...");
+        
+        // 停止接受新任务
+        executorService.shutdown();
+        
+        try {
+            // 等待现有任务完成，最多等待30秒
+            if (!executorService.awaitTermination(30, TimeUnit.SECONDS)) {
+                // 强制停止
+                executorService.shutdownNow();
+                log.warn("下载线程池强制关闭");
+            } else {
+                log.info("下载线程池正常关闭");
+            }
+        } catch (InterruptedException e) {
+            executorService.shutdownNow();
+            Thread.currentThread().interrupt();
+            log.warn("关闭过程被中断");
+        }
+        
+        initialized = false;
+    }
+
+    /**
+     * 获取执行器
+     */
+    static ExecutorService getExecutorService() {
+        if (!initialized) {
+            initialize();
+        }
+        return executorService;
+    }
 
     public static List<DownloadItem> getItems() {
         synchronized (downloadingItems) {
@@ -128,12 +221,17 @@ public class DownloadManage {
             return;
         }
 
-        executorService.submit(() -> {
+        // 确保初始化
+        if (!initialized) {
+            initialize();
+        }
+
+        getExecutorService().submit(() -> {
             try {
-                // 获取信号量许可
-                if (!downloadSemaphore.tryAcquire(SystemConstants.Download.DOWNLOAD_TIMEOUT_MINUTES, TimeUnit.MINUTES)) {
-                    log.warn("获取下载许可超时: {}", item.getUniqueId());
-                    return;
+                // 检查并发限制
+                while (activeDownloads.get() >= MAX_CONCURRENT_DOWNLOADS) {
+                    log.debug("达到并发限制，等待中: {}", item.getUniqueId());
+                    Thread.sleep(500);
                 }
 
                 activeDownloads.incrementAndGet();
@@ -162,7 +260,7 @@ public class DownloadManage {
                 }
 
                 Tmd.client.send(new TdApi.DownloadFile(item.getFileId(),
-                        SystemConstants.Download.DEFAULT_PRIORITY, 0, 0, true), result -> {
+                        DOWNLOAD_PRIORITY, 0, 0, true), result -> {
                     try {
                         if (result.isError()) {
                             log.error("下载失败 {}: {}", item.getUniqueId(), result.getError().message);
@@ -194,7 +292,7 @@ public class DownloadManage {
                             }
 
                             // 确认文件确实存在后再更新完成状态
-                            Path finalFilePath = Paths.get("downloads/videos/" + saveItem.getFilename());
+                            Path finalFilePath = Paths.get(SystemConstants.File.getVideosDirPath(), saveItem.getFilename());
                             if (!Files.exists(finalFilePath)) {
                                 log.error("下载完成但文件不存在，不更新状态: {}", finalFilePath);
                                 handleDownloadError(saveItem, "文件未正确保存到目标位置");
@@ -233,7 +331,7 @@ public class DownloadManage {
                 });
 
                 try {
-                    if (!countDownLatch.await(SystemConstants.Download.DOWNLOAD_TIMEOUT_MINUTES, TimeUnit.MINUTES)) {
+                    if (!countDownLatch.await(DOWNLOAD_TIMEOUT_MINUTES, TimeUnit.MINUTES)) {
                         log.warn("下载超时: {}", item.getUniqueId());
                         handleDownloadTimeout(item);
                     }
@@ -247,7 +345,6 @@ public class DownloadManage {
                 handleDownloadError(item, e.getMessage());
             } finally {
                 activeDownloads.decrementAndGet();
-                downloadSemaphore.release();
                 log.info("下载结束: {}, 当前活跃下载数: {}", item.getFilename(), activeDownloads.get());
             }
         });
@@ -265,7 +362,7 @@ public class DownloadManage {
             log.info("开始生成视频缩略图: {} (ID: {})", item.getFilename(), item.getId());
 
             // 直接生成视频截图
-            String videoPath = "downloads/videos/" + item.getFilename();
+            String videoPath = SystemConstants.File.getVideosDirPath() + "/" + item.getFilename();
             log.info("尝试生成视频截图: {}", videoPath);
             String generatedThumbnail = VideoProcessor.extractFirstFrameAsThumbnail(videoPath);
             if (generatedThumbnail != null) {
@@ -286,11 +383,21 @@ public class DownloadManage {
      * 处理下载错误
      */
     private static void handleDownloadError(DownloadItem item, String errorMessage) {
+        if (item == null || item.getUniqueId() == null) {
+            log.warn("下载项或唯一ID为空，无法更新错误状态");
+            return;
+        }
+        
         try {
             var service = SpringContext.getBean(DownloadItemServiceImpl.class);
             var saveItem = service.getByUniqueId(item.getUniqueId());
+            if (saveItem == null) {
+                log.warn("未找到下载项记录: {}", item.getUniqueId());
+                return;
+            }
+            
             saveItem.setState(DownloadState.Failed.name());
-            saveItem.setCaption(errorMessage);
+            saveItem.setCaption(errorMessage != null ? errorMessage : "未知错误");
             service.updateById(saveItem);
 
             // 推送状态更新
@@ -327,8 +434,8 @@ public class DownloadManage {
                 return false;
             }
 
-            // 确保downloads/videos目录存在
-            Path videosDir = Paths.get("downloads/videos");
+            // 确保视频目录存在
+            Path videosDir = Paths.get(SystemConstants.File.getVideosDirPath());
             if (!Files.exists(videosDir)) {
                 Files.createDirectories(videosDir);
                 log.info("创建目录: {}", videosDir.toAbsolutePath());

@@ -1,15 +1,18 @@
 package fun.zulin.tmd.controller;
 
+import fun.zulin.tmd.common.constant.SystemConstants;
 import fun.zulin.tmd.common.exception.ApiResponse;
 import fun.zulin.tmd.data.item.DownloadItem;
 import fun.zulin.tmd.data.item.DownloadItemService;
 import fun.zulin.tmd.data.item.DownloadItemServiceImpl;
 import fun.zulin.tmd.data.item.DownloadState;
+import fun.zulin.tmd.dto.BatchDownloadRequest;
+import fun.zulin.tmd.dto.BatchDownloadResponse;
+import fun.zulin.tmd.dto.TelegramLinkRequest;
 import fun.zulin.tmd.telegram.DownloadManage;
 import fun.zulin.tmd.telegram.Tmd;
-import fun.zulin.tmd.utils.SpringContext;
 import fun.zulin.tmd.utils.DataCleanupUtil;
-import fun.zulin.tmd.utils.TelegramChatIdUtils;
+import fun.zulin.tmd.utils.SpringContext;
 import it.tdlight.jni.TdApi;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -21,15 +24,11 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
-import java.time.LocalDateTime;
-import java.time.ZoneId;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Objects;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
-import java.util.ArrayList;
 
 /**
  * 下载管理API控制器
@@ -314,186 +313,7 @@ public class DownloadApiController {
         }
     }
 
-    /**
-     * 异步处理批量下载
-     */
-    private void processBatchDownload(BatchDownloadRequest request) {
-        new Thread(() -> {
-            try {
-                log.info("开始处理批量下载任务: chatId={}, messageId范围={}~{}, 并发数={}, 间隔={}ms",
-                        request.getChatId(), request.getStartMessageId(), request.getEndMessageId(),
-                        request.getConcurrent(), request.getInterval());
 
-                // 解析chatId
-                long chatId = parseChatId(request.getChatId());
-                if (chatId == 0) {
-                    log.error("无效的Chat ID: {}", request.getChatId());
-                    return;
-                }
-
-                // 创建信号量控制并发数
-                Semaphore semaphore = new Semaphore(request.getConcurrent());
-                CountDownLatch latch = new CountDownLatch(
-                        (int) (request.getEndMessageId() - request.getStartMessageId() + 1));
-
-                int successCount = 0;
-                int failedCount = 0;
-
-                // 使用原子计数器来避免lambda表达式的final变量问题
-                AtomicInteger successCounter = new AtomicInteger(0);
-                AtomicInteger failedCounter = new AtomicInteger(0);
-
-                // 按消息ID范围逐个处理
-                for (long messageId = request.getStartMessageId();
-                     messageId <= request.getEndMessageId(); messageId++) {
-
-                    try {
-                        semaphore.acquire();
-
-                        // 组合Telegram链接
-                        String telegramLink = String.format("https://t.me/%s/%d",
-                                request.getChatId().trim(), messageId);
-
-                        // 异步处理单个链接
-                        processSingleLinkForBatch(telegramLink, semaphore, latch, request.getMinDurationMinutes(),
-                                () -> successCounter.incrementAndGet(),
-                                () -> failedCounter.incrementAndGet());
-
-                        // 控制请求间隔
-                        if (request.getInterval() > 0 && messageId < request.getEndMessageId()) {
-                            Thread.sleep(request.getInterval());
-                        }
-
-                    } catch (InterruptedException e) {
-                        Thread.currentThread().interrupt();
-                        log.error("批量下载被中断", e);
-                        break;
-                    } catch (Exception e) {
-                        log.error("处理消息 {} 时发生错误", messageId, e);
-                        failedCounter.incrementAndGet();
-                        latch.countDown();
-                    }
-                }
-
-                // 等待所有任务完成
-                try {
-                    latch.await(30, TimeUnit.MINUTES); // 最多等待30分钟
-                    log.info("批量下载任务完成: 总数={}, 成功={}, 失败={}",
-                            request.getEndMessageId() - request.getStartMessageId() + 1,
-                            successCounter.get(), failedCounter.get());
-                } catch (InterruptedException e) {
-                    Thread.currentThread().interrupt();
-                    log.error("等待批量下载完成时被中断", e);
-                }
-
-                // 等待所有任务完成
-                try {
-                    latch.await(30, TimeUnit.MINUTES); // 最多等待30分钟
-                    log.info("批量下载任务完成: 总数={}, 成功={}, 失败={}",
-                            request.getEndMessageId() - request.getStartMessageId() + 1,
-                            successCount, failedCount);
-                } catch (InterruptedException e) {
-                    Thread.currentThread().interrupt();
-                    log.error("等待批量下载完成时被中断", e);
-                }
-
-            } catch (Exception e) {
-                log.error("批量下载任务执行失败", e);
-            }
-        }).start();
-    }
-
-    /**
-     * 解析Chat ID字符串
-     *
-     * @param chatIdStr Chat ID字符串（支持英文、数字、下划线、连字符）
-     * @return 解析后的chatId，失败返回0
-     */
-    private long parseChatId(String chatIdStr) {
-        if (chatIdStr == null || chatIdStr.trim().isEmpty()) {
-            return 0;
-        }
-
-        try {
-            // 支持纯数字格式
-            if (chatIdStr.matches("-?\\d+")) {
-                return Long.parseLong(chatIdStr);
-            }
-
-            // 支持包含英文、数字、下划线、连字符的混合格式
-            if (chatIdStr.matches("^[a-zA-Z0-9_-]+$")) {
-                // 对于非纯数字的Chat ID，需要通过Telegram API解析
-                return resolveChatIdByUsername(chatIdStr);
-            }
-
-            log.warn("不支持的Chat ID格式: {}，请使用数字或包含英文、数字、下划线、连字符的格式", chatIdStr);
-            return 0;
-
-        } catch (NumberFormatException e) {
-            log.error("Chat ID格式错误: {}", chatIdStr, e);
-            return 0;
-        }
-    }
-
-    /**
-     * 通过用户名或特殊格式解析Chat ID
-     *
-     * @param identifier 用户名或特殊格式的标识符
-     * @return Chat ID，失败返回0
-     */
-    private long resolveChatIdByUsername(String identifier) {
-        try {
-            log.info("[🐛 DEBUG] 开始解析Chat ID: {}", identifier);
-
-            // 使用CompletableFuture来处理异步API调用
-            CompletableFuture<Long> future = new CompletableFuture<>();
-
-            // 尝试不同的解析方式
-            Tmd.client.send(new TdApi.SearchPublicChat(identifier), result -> {
-                if (result.isError()) {
-                    log.warn("[🐛 DEBUG] SearchPublicChat解析 {} 失败: {}", identifier, result.getError().message);
-                    // 尝试其他方式
-                    tryResolveAlternativeWay(identifier, future);
-                } else {
-                    TdApi.Chat chat = result.get();
-                    log.info("[🐛 DEBUG] 成功解析 {} 为 Chat ID: {}", identifier, chat.id);
-                    future.complete(chat.id);
-                }
-            });
-
-            // 设置超时时间
-            Long chatId = future.get(30, TimeUnit.SECONDS);
-            return chatId != null ? chatId : 0;
-
-        } catch (Exception e) {
-            log.error("[🐛 DEBUG] 解析Chat ID {} 失败", identifier, e);
-            return 0;
-        }
-    }
-
-    /**
-     * 尝试替代解析方式
-     */
-    private void tryResolveAlternativeWay(String identifier, CompletableFuture<Long> future) {
-        // 如果是@开头的用户名格式
-        if (identifier.startsWith("@")) {
-            String username = identifier.substring(1);
-            Tmd.client.send(new TdApi.SearchPublicChat(username), result -> {
-                if (result.isError()) {
-                    log.error("[🐛 DEBUG] 解析用户名 {} 失败: {}", username, result.getError().message);
-                    future.complete(0L);
-                } else {
-                    TdApi.Chat chat = result.get();
-                    log.info("[🐛 DEBUG] 用户名 {} 解析为 Chat ID: {}", username, chat.id);
-                    future.complete(chat.id);
-                }
-            });
-        } else {
-            // 其他格式暂时返回0，可以后续扩展
-            log.warn("[🐛 DEBUG] 不支持的标识符格式: {}", identifier);
-            future.complete(0L);
-        }
-    }
 
     /**
      * 异步处理批量下载（通过链接组合方式）
@@ -585,45 +405,45 @@ public class DownloadApiController {
                             int effectiveMinDuration = minDurationMinutes != null ? minDurationMinutes : 10;
                             if (video.video.duration >= effectiveMinDuration * 60) {
                                 // 规范化chatId格式
-                                log.info("[🐛 DEBUG] 发现视频链接 {}: {}, 原始Chat ID: {}",
+                                log.info("发现视频链接 {}: {}, 原始Chat ID: {}",
                                        link, video.video.fileName, linkInfo.chatId);
                                 // 复用现有的视频处理逻辑，使用规范化后的chatId
                                 fun.zulin.tmd.telegram.handler.UpdateNewMessageHandler.processVideoMessage(
                                         messageId, video, linkInfo.chatId);
                                 onSuccess.run();
                             } else {
-                                log.info("[🐛 DEBUG] 视频链接时长不足{}分钟，跳过下载: {} (时长: {}秒)", 
+                                log.info("视频链接时长不足{}分钟，跳过下载: {} (时长: {}秒)", 
                                         effectiveMinDuration, video.video.fileName, video.video.duration);
                                 onSuccess.run(); // 仍然标记为成功，因为这是预期行为
                                 latch.countDown();
                             }
                         } else if (linkInfo.message.content instanceof TdApi.MessageDocument document) {
-                            log.info("[🐛 DEBUG] 发现文档链接 {}: {}", link, document.document.fileName);
+                            log.info("发现文档链接 {}: {}", link, document.document.fileName);
                             // 处理文档消息，并传递latch用于真正的完成通知
                             processDocumentMessageWithLatch(messageId, document, latch, onSuccess, onFailure);
                         } else if (linkInfo.message.content instanceof TdApi.MessagePhoto photo) {
-                            log.info("[🐛 DEBUG] 发现图片链接 {}: {}", link, "photo");
+                            log.info("发现图片链接 {}: {}", link, "photo");
                             // 处理图片消息，并传递latch用于真正的完成通知
                             processPhotoMessageWithLatch(messageId, photo, latch, onSuccess, onFailure);
                         } else {
-                            log.warn("[🐛 DEBUG] 链接 {} 指向的消息类型不支持下载: {}", link,
+                            log.warn("链接 {} 指向的消息类型不支持下载: {}", link,
                                     linkInfo.message.content.getClass().getSimpleName());
                             onFailure.run();
                             latch.countDown(); // 只有在失败时才减少计数器
                         }
                     } else {
-                        log.warn("[🐛 DEBUG] 无法解析链接信息: {}", link);
+                        log.warn("无法解析链接信息: {}", link);
                         onFailure.run();
                         latch.countDown(); // 只有在失败时才减少计数器
                     }
                 } else {
-                    log.error("[🐛 DEBUG] 解析Telegram链接失败: {}", link);
+                    log.error("解析Telegram链接失败: {}", link);
                     onFailure.run();
                     latch.countDown(); // 只有在失败时才减少计数器
                 }
 
             } catch (Exception e) {
-                log.error("[🐛 DEBUG] 处理链接 {} 时发生异常", link, e);
+                log.error("处理链接 {} 时发生异常", link, e);
                 onFailure.run();
                 latch.countDown(); // 只有在失败时才减少计数器
             } finally {
@@ -639,143 +459,19 @@ public class DownloadApiController {
     private void processDocumentMessageWithLatch(long messageId, TdApi.MessageDocument document,
                                                  CountDownLatch latch, Runnable onSuccess, Runnable onFailure) {
         try {
-            var service = SpringContext.getBean(DownloadItemServiceImpl.class);
             var uniqueId = document.document.document.remote.uniqueId;
-
-            // 检查是否已存在
-            var existingItem = service.getByUniqueId(uniqueId);
-            if (existingItem != null) {
-                log.info("文档 {} 已存在，跳过下载", document.document.fileName);
-                onSuccess.run();
-                latch.countDown(); // 成功跳过也要减少计数器
-                return;
-            }
-
             String originalFilename = document.document.fileName;
-            String captionText = document.caption.text;
+            String captionText = document.caption != null ? document.caption.text : null;
 
-            // 构造描述
-            StringBuilder descriptionBuilder = new StringBuilder();
-            if (captionText != null && !captionText.trim().isEmpty()) {
-                descriptionBuilder.append(captionText.trim());
-            }
-            if (originalFilename != null && !originalFilename.trim().isEmpty()) {
-                if (descriptionBuilder.length() > 0) {
-                    descriptionBuilder.append(" - ");
-                }
-                descriptionBuilder.append(originalFilename.trim());
-            }
-
-            String description = descriptionBuilder.toString();
-            if (description.isEmpty()) {
-                description = "Unnamed Document";
-            }
-
-            // 保存到数据库
-            var item = DownloadItem.builder()
-                    .description(description)
-                    .filename("temp_placeholder")
-                    .caption(document.caption.text)
-                    .createTime(LocalDateTime.now(ZoneId.of("Asia/Shanghai")))
-                    .downloadedSize(0)
-                    .fileId(document.document.document.id)
-                    .fileSize(document.document.document.size)
-                    .massageId(messageId)
-                    .chatId(Tmd.savedMessagesChat.id)  // 使用Saved Messages chatId
-                    .uniqueId(uniqueId)
-                    .state(DownloadState.Created.name())
-                    .build();
-
-            service.save(item);
-
-            // 使用数据库ID重命名
-            String idBasedFilename = generateIdBasedFilename(item, originalFilename);
-            item.setFilename(idBasedFilename);
-            service.updateById(item);
-
-            // 添加到下载队列
-            DownloadManage.addDownloadingItems(item);
-
-            // 注册下载完成回调
-            registerDownloadCompletionCallback(item, latch, onSuccess, onFailure);
-
-            // 开始下载
-            DownloadManage.download(item);
-
-            log.info("开始下载文档: {}", idBasedFilename);
+            // 使用公共方法处理下载
+            processDownloadItem(uniqueId, originalFilename, captionText, 
+                    document.document.document.id, document.document.document.size,
+                    "Document", "开始下载文档: {}", latch, onSuccess, onFailure);
 
         } catch (Exception e) {
             log.error("处理文档消息 {} 失败", messageId, e);
             onFailure.run();
-            latch.countDown(); // 失败时减少计数器
-        }
-    }
-
-    /**
-     * 处理文档消息
-     */
-    private void processDocumentMessage(long messageId, TdApi.MessageDocument document) {
-        try {
-            var service = SpringContext.getBean(DownloadItemServiceImpl.class);
-            var uniqueId = document.document.document.remote.uniqueId;
-
-            // 检查是否已存在
-            var existingItem = service.getByUniqueId(uniqueId);
-            if (existingItem != null) {
-                log.info("文档 {} 已存在，跳过下载", document.document.fileName);
-                return;
-            }
-
-            String originalFilename = document.document.fileName;
-            String captionText = document.caption.text;
-
-            // 构造描述
-            StringBuilder descriptionBuilder = new StringBuilder();
-            if (captionText != null && !captionText.trim().isEmpty()) {
-                descriptionBuilder.append(captionText.trim());
-            }
-            if (originalFilename != null && !originalFilename.trim().isEmpty()) {
-                if (descriptionBuilder.length() > 0) {
-                    descriptionBuilder.append(" - ");
-                }
-                descriptionBuilder.append(originalFilename.trim());
-            }
-
-            String description = descriptionBuilder.toString();
-            if (description.isEmpty()) {
-                description = "Unnamed Document";
-            }
-
-            // 保存到数据库
-            var item = DownloadItem.builder()
-                    .description(description)
-                    .filename("temp_placeholder")
-                    .caption(document.caption.text)
-                    .createTime(LocalDateTime.now(ZoneId.of("Asia/Shanghai")))
-                    .downloadedSize(0)
-                    .fileId(document.document.document.id)
-                    .fileSize(document.document.document.size)
-                    .massageId(messageId)
-                    .chatId(Tmd.savedMessagesChat.id)  // 使用Saved Messages chatId
-                    .uniqueId(uniqueId)
-                    .state(DownloadState.Created.name())
-                    .build();
-
-            service.save(item);
-
-            // 使用数据库ID重命名
-            String idBasedFilename = generateIdBasedFilename(item, originalFilename);
-            item.setFilename(idBasedFilename);
-            service.updateById(item);
-
-            // 添加到下载队列
-            DownloadManage.addDownloadingItems(item);
-            DownloadManage.download(item);
-
-            log.info("开始下载文档: {}", idBasedFilename);
-
-        } catch (Exception e) {
-            log.error("处理文档消息 {} 失败", messageId, e);
+            latch.countDown();
         }
     }
 
@@ -783,143 +479,139 @@ public class DownloadApiController {
      * 处理图片消息（带回调通知）
      */
     private void processPhotoMessageWithLatch(long messageId, TdApi.MessagePhoto photo,
-                                              CountDownLatch latch, Runnable onSuccess, Runnable onFailure) {
+                                             CountDownLatch latch, Runnable onSuccess, Runnable onFailure) {
         try {
             // 获取最大的图片尺寸
-            TdApi.PhotoSize largestSize = null;
-            for (TdApi.PhotoSize size : photo.photo.sizes) {
-                if (largestSize == null || size.photo.size > largestSize.photo.size) {
-                    largestSize = size;
-                }
-            }
+            TdApi.PhotoSize largestSize = findLargestPhotoSize(photo.photo.sizes);
 
             if (largestSize == null) {
                 log.warn("图片消息 {} 没有可用的尺寸", messageId);
                 onFailure.run();
-                latch.countDown(); // 失败时减少计数器
+                latch.countDown();
                 return;
             }
 
-            var service = SpringContext.getBean(DownloadItemServiceImpl.class);
             var uniqueId = largestSize.photo.remote.uniqueId;
+            String captionText = photo.caption != null ? photo.caption.text : null;
 
-            // 检查是否已存在
-            var existingItem = service.getByUniqueId(uniqueId);
-            if (existingItem != null) {
-                log.info("图片 {} 已存在，跳过下载", uniqueId);
-                onSuccess.run();
-                latch.countDown(); // 成功跳过也要减少计数器
-                return;
-            }
-
-            String captionText = photo.caption.text;
-            String description = (captionText != null && !captionText.trim().isEmpty())
-                    ? captionText.trim() : "Unnamed Photo";
-
-            // 保存到数据库
-            var item = DownloadItem.builder()
-                    .description(description)
-                    .filename("temp_placeholder.jpg")
-                    .caption(photo.caption.text)
-                    .createTime(LocalDateTime.now(ZoneId.of("Asia/Shanghai")))
-                    .downloadedSize(0)
-                    .fileId(largestSize.photo.id)
-                    .fileSize(largestSize.photo.size)
-                    .massageId(messageId)
-                    .chatId(Tmd.savedMessagesChat.id)  // 使用Saved Messages chatId
-                    .uniqueId(uniqueId)
-                    .state(DownloadState.Created.name())
-                    .build();
-
-            service.save(item);
-
-            // 使用数据库ID重命名
-            String idBasedFilename = item.getId() + ".jpg";
-            item.setFilename(idBasedFilename);
-            service.updateById(item);
-
-            // 添加到下载队列
-            DownloadManage.addDownloadingItems(item);
-
-            // 注册下载完成回调
-            registerDownloadCompletionCallback(item, latch, onSuccess, onFailure);
-
-            // 开始下载
-            DownloadManage.download(item);
-
-            log.info("开始下载图片: {}", idBasedFilename);
+            // 使用公共方法处理下载
+            processDownloadItem(uniqueId, "photo.jpg", captionText,
+                    largestSize.photo.id, largestSize.photo.size,
+                    "Photo", "开始下载图片: {}", latch, onSuccess, onFailure);
 
         } catch (Exception e) {
             log.error("处理图片消息 {} 失败", messageId, e);
             onFailure.run();
-            latch.countDown(); // 失败时减少计数器
+            latch.countDown();
         }
     }
 
     /**
-     * 处理图片消息
+     * 查找最大的图片尺寸
      */
-    private void processPhotoMessage(long messageId, TdApi.MessagePhoto photo) {
-        try {
-            // 获取最大的图片尺寸
-            TdApi.PhotoSize largestSize = null;
-            for (TdApi.PhotoSize size : photo.photo.sizes) {
-                if (largestSize == null || size.photo.size > largestSize.photo.size) {
-                    largestSize = size;
-                }
-            }
-
-            if (largestSize == null) {
-                log.warn("图片消息 {} 没有可用的尺寸", messageId);
-                return;
-            }
-
-            var service = SpringContext.getBean(DownloadItemServiceImpl.class);
-            var uniqueId = largestSize.photo.remote.uniqueId;
-
-            // 检查是否已存在
-            var existingItem = service.getByUniqueId(uniqueId);
-            if (existingItem != null) {
-                log.info("图片 {} 已存在，跳过下载", uniqueId);
-                return;
-            }
-
-            String captionText = photo.caption.text;
-            String description = (captionText != null && !captionText.trim().isEmpty())
-                    ? captionText.trim() : "Unnamed Photo";
-
-            // 保存到数据库
-            var item = DownloadItem.builder()
-                    .description(description)
-                    .filename("temp_placeholder.jpg")
-                    .caption(photo.caption.text)
-                    .createTime(LocalDateTime.now(ZoneId.of("Asia/Shanghai")))
-                    .downloadedSize(0)
-                    .fileId(largestSize.photo.id)
-                    .fileSize(largestSize.photo.size)
-                    .massageId(messageId)
-                    .chatId(Tmd.savedMessagesChat.id)  // 使用Saved Messages chatId
-                    .uniqueId(uniqueId)
-                    .state(DownloadState.Created.name())
-                    .build();
-
-            service.save(item);
-
-            // 使用数据库ID重命名
-            String idBasedFilename = item.getId() + ".jpg";
-            item.setFilename(idBasedFilename);
-            service.updateById(item);
-
-            // 添加到下载队列
-            DownloadManage.addDownloadingItems(item);
-            DownloadManage.download(item);
-
-            log.info("开始下载图片: {}", idBasedFilename);
-
-        } catch (Exception e) {
-            log.error("处理图片消息 {} 失败", messageId, e);
+    private TdApi.PhotoSize findLargestPhotoSize(TdApi.PhotoSize[] sizes) {
+        if (sizes == null || sizes.length == 0) {
+            return null;
         }
+        TdApi.PhotoSize largest = null;
+        for (TdApi.PhotoSize size : sizes) {
+            if (largest == null || size.photo.size > largest.photo.size) {
+                largest = size;
+            }
+        }
+        return largest;
     }
+
+    /**
+     * 公共下载处理方法
+     * 统一处理文档、图片等下载项的创建、保存和下载流程
+     */
+    private void processDownloadItem(String uniqueId, String originalFilename, String captionText,
+                                      int fileId, long fileSize, String fileType,
+                                      String startLogMessage, CountDownLatch latch, 
+                                      Runnable onSuccess, Runnable onFailure) {
+        var service = SpringContext.getBean(DownloadItemServiceImpl.class);
+
+        // 检查是否已存在
+        var existingItem = service.getByUniqueId(uniqueId);
+        if (existingItem != null) {
+            log.info("{} {} 已存在，跳过下载", fileType, originalFilename);
+            onSuccess.run();
+            latch.countDown();
+            return;
+        }
+
+        // 构造描述
+        String description = buildDescription(captionText, originalFilename, fileType);
+
+        // 保存到数据库
+        DownloadItem item = DownloadItem.builder()
+                .description(description)
+                .filename("temp_placeholder")
+                .caption(captionText)
+                .createTime(LocalDateTime.now(ZoneId.of("Asia/Shanghai")))
+                .downloadedSize(0)
+                .fileId(fileId)
+                .fileSize(fileSize)
+                .massageId(0L) // 将在回调中设置
+                .chatId(Tmd.savedMessagesChat.id)
+                .uniqueId(uniqueId)
+                .state(DownloadState.Created.name())
+                .build();
+
+        service.save(item);
+
+        // 使用数据库ID重命名
+        String extension = getFileExtension(originalFilename);
+        String idBasedFilename = item.getId() + extension;
+        item.setFilename(idBasedFilename);
+        service.updateById(item);
+
+        // 添加到下载队列
+        DownloadManage.addDownloadingItems(item);
+
+        // 注册下载完成回调
+        registerDownloadCompletionCallback(item, latch, onSuccess, onFailure);
+
+        // 开始下载
+        DownloadManage.download(item);
+        log.info(startLogMessage, idBasedFilename);
+    }
+
+    /**
+     * 构造文件描述
+     */
+    private String buildDescription(String captionText, String filename, String defaultName) {
+        StringBuilder desc = new StringBuilder();
+        if (captionText != null && !captionText.trim().isEmpty()) {
+            desc.append(captionText.trim());
+        }
+        if (filename != null && !filename.trim().isEmpty() && !filename.equals("photo.jpg")) {
+            if (desc.length() > 0) {
+                desc.append(" - ");
+            }
+            desc.append(filename.trim());
+        }
+        if (desc.length() == 0) {
+            desc.append("Unnamed ").append(defaultName);
+        }
+        return desc.toString();
+    }
+
+    /**
+     * 获取文件扩展名
+     */
+    private String getFileExtension(String filename) {
+        if (filename == null || filename.trim().isEmpty()) {
+            return ".jpg";
+        }
+        int lastDot = filename.lastIndexOf('.');
+        return lastDot > 0 ? filename.substring(lastDot) : ".jpg";
+    }
+
+
+
+
 
     /**
      * 注册下载完成回调
@@ -950,26 +642,6 @@ public class DownloadApiController {
 
         // 添加监听器
         DownloadManage.addListener(listener);
-    }
-
-
-    /**
-     * 使用数据库ID生成文件名
-     */
-    private String generateIdBasedFilename(DownloadItem item, String originalFilename) {
-        Objects.requireNonNull(item.getId(), "数据库ID不能为空");
-
-        // 获取文件扩展名
-        String extension = ".mp4"; // 默认扩展名
-        if (originalFilename != null && !originalFilename.trim().isEmpty()) {
-            int lastDotIndex = originalFilename.lastIndexOf('.');
-            if (lastDotIndex > 0) {
-                extension = originalFilename.substring(lastDotIndex);
-            }
-        }
-
-        // 使用数据库ID作为文件名
-        return item.getId() + extension;
     }
 
     /**
@@ -1028,118 +700,6 @@ public class DownloadApiController {
     }
 
     /**
-     * 批量下载请求DTO
-     */
-    public static class BatchDownloadRequest {
-        private String chatId;
-        private Long startMessageId;
-        private Long endMessageId;
-        private Integer concurrent = 3;  // 默认并发数
-        private Integer interval = 1000; // 默认间隔时间(毫秒)
-        private Integer minDurationMinutes = 10; // 默认最小时长(分钟)
-
-        // getters and setters
-        public String getChatId() {
-            return chatId;
-        }
-
-        public void setChatId(String chatId) {
-            this.chatId = chatId;
-        }
-
-        public Long getStartMessageId() {
-            return startMessageId;
-        }
-
-        public void setStartMessageId(Long startMessageId) {
-            this.startMessageId = startMessageId;
-        }
-
-        public Long getEndMessageId() {
-            return endMessageId;
-        }
-
-        public void setEndMessageId(Long endMessageId) {
-            this.endMessageId = endMessageId;
-        }
-
-        public Integer getConcurrent() {
-            return concurrent;
-        }
-
-        public void setConcurrent(Integer concurrent) {
-            this.concurrent = concurrent;
-        }
-
-        public Integer getInterval() {
-            return interval;
-        }
-
-        public void setInterval(Integer interval) {
-            this.interval = interval;
-        }
-
-        public Integer getMinDurationMinutes() {
-            return minDurationMinutes;
-        }
-
-        public void setMinDurationMinutes(Integer minDurationMinutes) {
-            this.minDurationMinutes = minDurationMinutes;
-        }
-    }
-
-    /**
-     * 批量下载响应DTO
-     */
-    public static class BatchDownloadResponse {
-        private Integer totalCount;
-        private Integer successCount;
-        private Integer failedCount;
-        private String message;
-
-        public BatchDownloadResponse(Integer totalCount, Integer successCount, Integer failedCount, String message) {
-            this.totalCount = totalCount;
-            this.successCount = successCount;
-            this.failedCount = failedCount;
-            this.message = message;
-        }
-
-        // getters
-        public Integer getTotalCount() {
-            return totalCount;
-        }
-
-        public Integer getSuccessCount() {
-            return successCount;
-        }
-
-        public Integer getFailedCount() {
-            return failedCount;
-        }
-
-        public String getMessage() {
-            return message;
-        }
-    }
-
-    /**
-     * Telegram链接请求DTO
-     */
-    public static class TelegramLinkRequest {
-        private String link;
-
-        // getters and setters
-        public String getLink() {
-            return link;
-        }
-
-        public void setLink(String link) {
-            this.link = link;
-        }
-    }
-
-
-    /**
      * 清理所有下载数据
      */
     @PostMapping("/clean-all")
@@ -1183,7 +743,7 @@ public class DownloadApiController {
             }
 
             // 构建文件路径
-            Path filePath = Paths.get("downloads/videos").resolve(item.getFilename());
+            Path filePath = Paths.get(SystemConstants.File.getVideosDirPath()).resolve(item.getFilename());
 
             // 检查文件是否存在
             if (Files.exists(filePath)) {
