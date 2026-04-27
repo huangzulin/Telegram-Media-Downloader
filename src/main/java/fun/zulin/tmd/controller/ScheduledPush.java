@@ -2,12 +2,14 @@ package fun.zulin.tmd.controller;
 
 import fun.zulin.tmd.data.item.DownloadItemService;
 import fun.zulin.tmd.telegram.Tmd;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.DependsOn;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
+@Slf4j
 @Service
 @DependsOn("tmd")
 public class ScheduledPush {
@@ -18,7 +20,7 @@ public class ScheduledPush {
     @Autowired
     SimpMessagingTemplate simpMessagingTemplate;
 
-    @Scheduled(fixedRate = 2000)
+    @Scheduled(fixedRate = 30000)
     public void downloaded() {
         try {
             if (Tmd.client != null) {
@@ -26,10 +28,9 @@ public class ScheduledPush {
                 simpMessagingTemplate.convertAndSend("/topic/downloaded", items);
             }
         } catch (Exception e) {
+            log.debug("推送已下载列表失败", e);
         }
-
     }
-
 
     @Scheduled(fixedRate = 500)
     public void downloading() {
@@ -39,8 +40,7 @@ public class ScheduledPush {
                 simpMessagingTemplate.convertAndSend("/topic/downloading", items);
             }
         } catch (Exception e) {
-
+            log.debug("推送下载中列表失败", e);
         }
     }
 }
-

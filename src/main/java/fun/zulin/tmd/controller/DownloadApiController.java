@@ -41,6 +41,13 @@ public class DownloadApiController {
 
     private final DownloadItemService downloadItemService;
 
+    private static final ExecutorService batchDownloadExecutor = Executors.newCachedThreadPool(r -> {
+        Thread t = new Thread(r);
+        t.setName("batch-download-" + System.nanoTime());
+        t.setDaemon(true);
+        return t;
+    });
+
     /**
      * 获取已完成的下载项
      */
@@ -319,7 +326,7 @@ public class DownloadApiController {
      * 异步处理批量下载（通过链接组合方式）
      */
     private void processBatchDownloadByLinks(BatchDownloadRequest request) {
-        new Thread(() -> {
+        batchDownloadExecutor.submit(() -> {
             try {
                 log.info("开始处理批量下载任务（链接方式）: 频道={}, 消息ID范围={}~{}, 并发数={}, 间隔={}ms",
                         request.getChatId(), request.getStartMessageId(), request.getEndMessageId(),
@@ -383,12 +390,9 @@ public class DownloadApiController {
             } catch (Exception e) {
                 log.error("批量下载任务执行失败", e);
             }
-        }).start();
+        });
     }
 
-    /**
-     * 处理单个链接（用于批量下载）
-     */
     private void processSingleLinkForBatch(String link, Semaphore semaphore,
                                            CountDownLatch latch, Integer minDurationMinutes, Runnable onSuccess, Runnable onFailure) {
 

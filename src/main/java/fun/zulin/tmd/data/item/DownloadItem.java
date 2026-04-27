@@ -121,9 +121,11 @@ public class DownloadItem {
     }
 
     public long getDownloadBytePerSec() {
-        var timeDiff = Duration.between(this.getDownloadUpdateTime(), LocalDateTime.now(ZoneId.of("Asia/Shanghai"))).toSeconds();
-        if (timeDiff > 2) {
-            return 0;
+        if (downloadBytePerSec != null && downloadUpdateTime != null) {
+            var timeDiff = Duration.between(downloadUpdateTime, LocalDateTime.now(ZoneId.of("Asia/Shanghai"))).toSeconds();
+            if (timeDiff > 2) {
+                return 0;
+            }
         }
         return downloadBytePerSec != null ? downloadBytePerSec : 0;
     }

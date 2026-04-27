@@ -10,6 +10,7 @@ import fun.zulin.tmd.utils.SpringContext;
 import fun.zulin.tmd.utils.VideoProcessor;
 import it.tdlight.jni.TdApi;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -22,48 +23,28 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.stream.Collectors;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 @Slf4j
 public class DownloadManage {
 
-    private static List<DownloadItem> downloadingItems = new ArrayList<>();
+    private static final List<DownloadItem> downloadingItems = new CopyOnWriteArrayList<>();
 
-    /**
-     * 当前活跃下载数量
-     */
     private static final AtomicInteger activeDownloads = new AtomicInteger(0);
 
-    /**
-     * Telegram下载优先级
-     */
     private static volatile int DOWNLOAD_PRIORITY = 16;
 
-    /**
-     * 最大并发下载数
-     */
     private static volatile int MAX_CONCURRENT_DOWNLOADS = 3;
 
-    /**
-     * 下载超时时间（分钟）
-     */
     private static volatile int DOWNLOAD_TIMEOUT_MINUTES = 30;
 
-    /**
-     * 下载执行器（使用 ThreadPoolExecutor 以支持优雅关闭）
-     */
     private static volatile ThreadPoolExecutor executorService;
 
-    /**
-     * 状态变更监听器列表
-     */
     private static final List<StateChangeListener> stateChangeListeners = new CopyOnWriteArrayList<>();
 
-    /**
-     * 是否已初始化
-     */
     private static volatile boolean initialized = false;
+
+    private static volatile SimpMessagingTemplate cachedMessagingTemplate;
 
     /**
      * 初始化下载管理器
@@ -149,9 +130,7 @@ public class DownloadManage {
     }
 
     public static List<DownloadItem> getItems() {
-        synchronized (downloadingItems) {
-            return new ArrayList<>(downloadingItems);
-        }
+        return new ArrayList<>(downloadingItems);
     }
 
     /**
@@ -485,16 +464,6 @@ public class DownloadManage {
         try {
             var service = SpringContext.getBean(DownloadItemServiceImpl.class);
 
-            // 添加详细调试信息
-            log.info("=== 开始查询未完成任务 ===");
-
-            // 先查询所有任务状态分布
-            var allItems = service.list();
-            log.info("数据库中总任务数: {}", allItems.size());
-            allItems.forEach(item ->
-                    log.info("任务状态详情 - ID: {}, 文件名: {}, 状态: {}, UniqueId: {}",
-                            item.getId(), item.getFilename(), item.getState(), item.getUniqueId()));
-
             var items = service.getDownloadingItemsFromDB();
             log.info("查询到的未完成任务数: {}", items.size());
 
@@ -503,7 +472,8 @@ public class DownloadManage {
                 return;
             }
 
-            downloadingItems = CollectionUtil.emptyIfNull(items);
+            downloadingItems.clear();
+            downloadingItems.addAll(CollectionUtil.emptyIfNull(items));
 
             log.info("发现 {} 个未完成的下载任务，开始恢复...", downloadingItems.size());
 
@@ -553,10 +523,8 @@ public class DownloadManage {
      * 用于判断是否应该恢复该任务
      */
     public static boolean isItemInDownloadingQueue(String uniqueId) {
-        synchronized (downloadingItems) {
-            return downloadingItems.stream()
-                    .anyMatch(item -> item.getUniqueId().equals(uniqueId));
-        }
+        return downloadingItems.stream()
+                .anyMatch(item -> item.getUniqueId().equals(uniqueId));
     }
 
     /**
@@ -569,12 +537,9 @@ public class DownloadManage {
             var dbItems = service.getDownloadingItemsFromDB();
             var dbItemIds = dbItems.stream()
                     .map(DownloadItem::getUniqueId)
-                    .collect(Collectors.toSet());
+                    .collect(java.util.stream.Collectors.toSet());
 
-            // 移除内存中存在但数据库中已删除的项
-            synchronized (downloadingItems) {
-                downloadingItems.removeIf(item -> !dbItemIds.contains(item.getUniqueId()));
-            }
+            downloadingItems.removeIf(item -> !dbItemIds.contains(item.getUniqueId()));
 
             log.info("清理完成，当前内存队列大小: {}", downloadingItems.size());
         } catch (Exception e) {
@@ -589,16 +554,15 @@ public class DownloadManage {
      */
     private static void pushStateUpdate(DownloadItem item) {
         try {
-            var messagingTemplate = SpringContext.getBean(
-                    org.springframework.messaging.simp.SimpMessagingTemplate.class);
-            if (messagingTemplate != null) {
-                // 推送到下载中主题
-                messagingTemplate.convertAndSend(SystemConstants.WebSocket.DOWNLOADING_TOPIC,
+            if (cachedMessagingTemplate == null) {
+                cachedMessagingTemplate = SpringContext.getBean(SimpMessagingTemplate.class);
+            }
+            if (cachedMessagingTemplate != null) {
+                cachedMessagingTemplate.convertAndSend(SystemConstants.WebSocket.DOWNLOADING_TOPIC,
                         getItems());
-                log.debug("推送状态更新: {} -> {}", item.getFilename(), item.getState());
             }
         } catch (Exception e) {
-            log.warn("推送状态更新失败: {}", item.getUniqueId(), e);
+            log.debug("推送状态更新失败: {}", item.getUniqueId(), e);
         }
     }
 
@@ -607,16 +571,12 @@ public class DownloadManage {
     }
 
     public static void removeDownloadingItems(String uniqueId) {
-        synchronized (downloadingItems) {
-            int beforeSize = downloadingItems.size();
-            downloadingItems = downloadingItems.stream()
-                    .filter(d -> !d.getUniqueId().equals(uniqueId))
-                    .collect(Collectors.toCollection(ArrayList::new));
-            int afterSize = downloadingItems.size();
+        int beforeSize = downloadingItems.size();
+        downloadingItems.removeIf(d -> d.getUniqueId().equals(uniqueId));
+        int afterSize = downloadingItems.size();
 
-            if (beforeSize != afterSize) {
-                log.info("从下载队列中移除项: {}, 队列大小: {} -> {}", uniqueId, beforeSize, afterSize);
-            }
+        if (beforeSize != afterSize) {
+            log.info("从下载队列中移除项: {}, 队列大小: {} -> {}", uniqueId, beforeSize, afterSize);
         }
     }
 

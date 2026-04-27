@@ -19,9 +19,21 @@ import java.util.UUID;
  */
 @Slf4j
 public class VideoProcessor {
-    
+
+    private static final FFmpeg ffmpeg;
+    private static final FFprobe ffprobe;
+
+    static {
+        try {
+            ffmpeg = new FFmpeg();
+            ffprobe = new FFprobe();
+        } catch (IOException e) {
+            throw new RuntimeException("Failed to initialize FFmpeg/FFprobe", e);
+        }
+    }
+
     private static DownloadDirectoryManager directoryManager;
-    
+
     static {
         try {
             directoryManager = SpringContext.getBean(DownloadDirectoryManager.class);
@@ -55,16 +67,12 @@ public class VideoProcessor {
             String thumbnailFilename = UUID.randomUUID().toString() + ".jpg";
             Path outputPath = thumbnailsDir.resolve(thumbnailFilename);
             
-            // 使用FFmpeg截取第一帧
-            FFmpeg ffmpeg = new FFmpeg();
-            FFprobe ffprobe = new FFprobe();
-            
             FFmpegBuilder builder = new FFmpegBuilder()
                     .setInput(inputPath.toString())
                     .addOutput(outputPath.toString())
-                    .setFrames(1)  // 只截取一帧
+                    .setFrames(1)
                     .done();
-            
+
             FFmpegExecutor executor = new FFmpegExecutor(ffmpeg, ffprobe);
             executor.createJob(builder).run();
             
@@ -91,7 +99,6 @@ public class VideoProcessor {
      */
     public static FFmpegProbeResult getVideoInfo(String videoPath) {
         try {
-            FFprobe ffprobe = new FFprobe();
             return ffprobe.probe(videoPath);
         } catch (Exception e) {
             log.error("获取视频信息失败: {}", videoPath, e);
